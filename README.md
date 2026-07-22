@@ -1,66 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
+  
+  # Finlog — Sistem Keuangan Internal
+  **Platform Tata Buku & Laporan Keuangan Berbasis Double-Entry**
+</div>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+## 📌 Tentang Proyek
+**Finlog** adalah sistem informasi akuntansi dan pencatatan keuangan internal (*General Ledger*) yang dibangun khusus untuk mengelola pembukuan, transaksi ganda (*double-entry*), serta mencetak laporan keuangan (Buku Besar, Laba Rugi, dsb.) secara presisi.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Sistem ini dikembangkan menggunakan tumpukan teknologi modern:
+- **Framework Utama:** [Laravel 11](https://laravel.com)
+- **Admin Panel & UI:** [Filament v3](https://filamentphp.com) + [Livewire v3](https://livewire.laravel.com)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Panduan Instalasi (Untuk Tim Developer)
 
-## Learning Laravel
+Ikuti langkah-langkah di bawah ini untuk meng-*clone* dan menjalankan aplikasi Finlog di komputer lokal (localhost) Anda.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 1. Kebutuhan Sistem (Prerequisites)
+Pastikan Anda sudah menginstal aplikasi berikut di komputer Anda:
+- **PHP** (Minimal versi 8.2 atau terbaru)
+- **Composer** (Untuk *package manager* PHP)
+- **Node.js** & **NPM** (Minimal v18+)
+- **MySQL / SQLite** (Sistem ini secara *default* sudah siap jalan dengan SQLite local, namun Anda bisa mengubahnya ke MySQL di file `.env`).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 2. Clone Repositori
+Silakan *clone branch* utama dari GitHub dan masuk ke dalam folder proyek:
+```bash
+git clone https://github.com/rivaelsaputra107387/shoe-finance.git
+cd shoe-finance
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 3. Install Dependencies
+Instal semua modul PHP dan *library* pendukung *front-end*:
+```bash
+# Instal modul PHP
+composer install
 
-## Laravel Sponsors
+# Instal modul JavaScript (Tailwind, dll)
+npm install
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 4. Konfigurasi Environment (.env)
+*Copy* file `.env.example` bawaan menjadi file `.env` yang sesungguhnya:
+```bash
+cp .env.example .env
+```
+Lalu *generate* kunci aplikasi:
+```bash
+php artisan key:generate
+```
 
-### Premium Partners
+### 5. Setup Database & Seeding Data
+Sistem ini dilengkapi dengan data *dummy* otomatis (termasuk CoA/Akun, Periode Fiskal, dan Transaksi Jurnal Demo) agar Anda bisa langsung melihat wujud aplikasinya. Jalankan perintah ini:
+```bash
+php artisan migrate:fresh --seed
+```
+*(Catatan: Jika ditanya apakah ingin membuat file database sqlite, ketik `yes`)*
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 6. Jalankan Server Lokal
+Anda harus menjalankan dua terminal secara bersamaan agar fungsi aplikasi (PHP) dan *styling* (CSS/Vite) dapat berjalan sempurna.
 
-## Contributing
+**Terminal 1 (Backend):**
+```bash
+php artisan serve
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Terminal 2 (Frontend/Vite):**
+```bash
+npm run dev
+```
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🔑 Akses Login Aplikasi
 
-## Security Vulnerabilities
+Setelah server berjalan, buka browser Anda dan akses alamat:
+👉 **[http://localhost:8000/admin](http://localhost:8000/admin)**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Gunakan akun berikut untuk mencoba aplikasinya:
+*   **Email:** `owner@shoeworkshop.com` ATAU `staff@shoeworkshop.com`
+*   **Password:** `password`
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 📂 Struktur Utama Pekerjaan (Untuk Navigasi Tim)
+Jika Anda anggota tim yang ingin ikut campur mengembangkan *codebase*, berikut titik-titik krusial yang perlu Anda ketahui:
+*   **Logika Akuntansi Utama:** Ada di folder `app/Services/` (LedgerService, IncomeStatementService).
+*   **UI Dashboard & Form:** Diatur lewat komponen `app/Filament/Widgets` dan `app/Livewire/`.
+*   **View Kustom:** Berada di `resources/views/filament/` dan `resources/views/livewire/`.
+*   **Skema Database:** Terpusat di `database/migrations/` dan `database/seeders/`.
+
+> **Selamat Mengkoding! Silakan buat branch baru jika ingin menambahkan fitur.**
