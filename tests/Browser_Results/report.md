@@ -64,7 +64,11 @@ samakan buat button export PDF dan export Excel nya
 
 ![1784774915278](image/report/1784774915278.png)       ![1784775009850](image/report/1784775009850.png)
 
-di filter ini buttonnya harus gak active dulu baru ke filter, behaviour nya waktu udah klik dropdown nya langsung ke filter
+di filter ini buttonnya harus gak active dulu baru ke filter, behaviour nya waktu udah klik dropdown nya langsung ke filter.
+
+![1784776722587](image/report/1784776722587.png)
+
+export Excel nya masih raw
 
 ## 6. Notes
 
