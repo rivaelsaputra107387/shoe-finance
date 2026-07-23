@@ -49,3 +49,24 @@ ini buat jadi ada background (buat jadi button) karena ini kaya text biasa
 ![1784712238397](image/report/1784712238397.png)
 
 error message nya ubah konsistensikan jadi bahasa indonesia
+
+![1784772468308](image/report/1784772468308.png)
+
+Tidak ada loading, untuk loading ini dibuat di setiap halaman untuk setiap halaman yang mengambil data untuk mencegah user beranggapan web tidak jalan
+
+![1784772574712](image/report/1784772574712.png)
+
+buat search dari nama akun
+
+![1784773534136](image/report/1784773534136.png)![1784773651646](image/report/1784773651646.png)![1784773690762](image/report/1784773690762.png)
+
+samakan buat button export PDF dan export Excel nya
+
+![1784774915278](image/report/1784774915278.png)       ![1784775009850](image/report/1784775009850.png)
+
+di filter ini buttonnya harus gak active dulu baru ke filter, behaviour nya waktu udah klik dropdown nya langsung ke filter
+
+## 6. Notes
+
+* menarik data pendapatan dari WEB utama (nanti minta ke sidik)
+* narik data pengeluaran dari workshop sortir
