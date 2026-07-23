@@ -40,7 +40,7 @@ Tombol **"Simpan Jurnal"** dinonaktifkan karena nilai Debit dan Kredit berselisi
 
 ![1784712512037](image/report/1784712512037.png)
 
-input jurnal baru enggak usah ada di sidebar, karena udah ada di daftar jurnal
+input jurnal baru enggak usah ada di sidebar, karena udah ada di daftar jurnal, di daftar jurnal tampilin COA (nama akun sama kode akun)
 
 ![1784712470794](image/report/1784712470794.png)
 
