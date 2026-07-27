@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             FiscalPeriodSeeder::class,
             AccountSeeder::class,
+            DummyTransactionSeeder::class,
             DemoTransactionSeeder::class,
         ]);
     }

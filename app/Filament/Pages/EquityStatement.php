@@ -6,14 +6,13 @@ use App\Models\FiscalPeriod;
 use App\Services\EquityStatementService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Pages\Page;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Filament\Infolists\Contracts\HasInfolists;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Card;
@@ -30,6 +29,7 @@ class EquityStatement extends Page implements HasForms, HasInfolists
     protected static string $view = 'filament.pages.equity-statement';
 
     public ?int $fiscal_period_id = null;
+    public ?array $data = [];
     public array $reportData = [];
 
     public static function shouldRegisterNavigation(): bool
@@ -50,15 +50,14 @@ class EquityStatement extends Page implements HasForms, HasInfolists
         }
     }
 
-    public function form(Form $form): Form
+    public function updatedFiscalPeriodId(): void
     {
-        return $form->schema([
-            Select::make('fiscal_period_id')
-                ->label('Periode')
-                ->options(FiscalPeriod::orderByDesc('start_date')->pluck('name', 'id'))
-                ->required()
-                ->reactive(),
-        ])->columns(1);
+        $this->generateReport();
+    }
+
+    public function getAvailablePeriodsProperty()
+    {
+        return FiscalPeriod::orderByDesc('start_date')->get();
     }
 
     public function generateReport(): void
@@ -70,13 +69,14 @@ class EquityStatement extends Page implements HasForms, HasInfolists
 
         $this->reportData = [
             'period_name' => $result['period']->name,
-            'beginning_capital' => (float)$result['beginning_capital'],
-            'net_profit' => (float)$result['net_profit'],
-            'prive' => (float)$result['prive'],
-            'retained_earnings' => (float)$result['retained_earnings'],
-            'ending_capital' => (float)$result['ending_capital'],
-            'modal_account_name' => $result['modal_account_name'],
-            'prive_account_name' => $result['prive_account_name'],
+            'beginning_capital' => (float)($result['beginning_capital'] ?? 0),
+            'additional_capital' => (float)($result['additional_capital'] ?? 0),
+            'net_profit' => (float)($result['net_profit'] ?? 0),
+            'prive' => (float)($result['prive'] ?? 0),
+            'retained_earnings' => (float)($result['retained_earnings'] ?? 0),
+            'ending_capital' => (float)($result['ending_capital'] ?? 0),
+            'modal_account_name' => $result['modal_account_name'] ?? 'Modal Disetor',
+            'prive_account_name' => $result['prive_account_name'] ?? 'Prive',
         ];
     }
 
@@ -126,7 +126,26 @@ class EquityStatement extends Page implements HasForms, HasInfolists
                                 ->weight('semibold'),
                         ]),
 
-                        // Row 3: Prive (jika ada)
+                        // Row 3: Setoran Modal Tambahan (jika ada)
+                        Grid::make(12)
+                            ->visible(fn () => ($this->reportData['additional_capital'] ?? 0) > 0)
+                            ->schema([
+                                TextEntry::make('additional_capital_label')
+                                    ->label('')
+                                    ->hiddenLabel()
+                                    ->getStateUsing(fn () => 'Setoran Tambahan Modal (+)')
+                                    ->columnSpan(9)
+                                    ->color('gray'),
+                                TextEntry::make('additional_capital')
+                                    ->label('')
+                                    ->hiddenLabel()
+                                    ->columnSpan(3)
+                                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 2, ',', '.'))
+                                    ->alignEnd()
+                                    ->color('success'),
+                            ]),
+
+                        // Row 4: Prive (jika ada)
                         Grid::make(12)
                             ->visible(fn () => ($this->reportData['prive'] ?? 0) > 0)
                             ->schema([

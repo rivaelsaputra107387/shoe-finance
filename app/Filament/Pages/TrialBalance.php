@@ -5,19 +5,17 @@ namespace App\Filament\Pages;
 use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Services\TrialBalanceService;
+use App\Services\AccountBalanceService;
 use Filament\Pages\Page;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Collection;
 
-class TrialBalance extends Page implements HasForms, HasTable
+class TrialBalance extends Page implements HasTable
 {
-    use InteractsWithForms, InteractsWithTable;
+    use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
     protected static ?string $navigationLabel = 'Neraca Lajur';
@@ -27,10 +25,13 @@ class TrialBalance extends Page implements HasForms, HasTable
     protected static string $view = 'filament.pages.trial-balance';
 
     public ?int $fiscal_period_id = null;
-    
-    public float $totalDebit = 0.0;
+    public ?array $data = [];
+    public float $totalDebit  = 0.0;
     public float $totalCredit = 0.0;
-    public bool $isBalanced = true;
+    public bool  $isBalanced  = true;
+
+    /** Pre-fetched cumulative totals keyed by account_id (serialisable as array) */
+    public array $cachedTotals = [];
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -45,39 +46,56 @@ class TrialBalance extends Page implements HasForms, HasTable
 
         $activePeriod = FiscalPeriod::active();
         $this->fiscal_period_id = $activePeriod?->id;
+
         if ($this->fiscal_period_id) {
             $this->generateReport();
         }
     }
 
-    public function form(Form $form): Form
+    public function updatedFiscalPeriodId(): void
     {
-        return $form->schema([
-            Select::make('fiscal_period_id')
-                ->label('Periode')
-                ->options(FiscalPeriod::orderByDesc('start_date')->pluck('name', 'id'))
-                ->required()
-                ->reactive()
-                ->afterStateUpdated(fn () => $this->generateReport()),
-        ])->columns(1);
+        $this->generateReport();
     }
 
+    public function getAvailablePeriodsProperty()
+    {
+        return FiscalPeriod::orderByDesc('start_date')->get();
+    }
+
+    /**
+     * Run ONE bulk query and cache the result.
+     * The Filament Table will then read from cachedTotals — ZERO additional queries per row.
+     */
     public function generateReport(): void
     {
         if (!$this->fiscal_period_id) return;
 
-        $service = new TrialBalanceService();
-        $result = $service->generate($this->fiscal_period_id);
-        
-        $this->totalDebit = (float)$result['total_debit'];
-        $this->totalCredit = (float)$result['total_credit'];
-        $this->isBalanced = (bool)$result['is_balanced'];
-        
+        $balanceSvc = new AccountBalanceService();
+        $totalsCollection = $balanceSvc->getCumulativeTotalsUpTo($this->fiscal_period_id);
+
+        // Convert to plain array for Livewire serialisation
+        $this->cachedTotals = $totalsCollection->map(fn ($row) => [
+            'debit'  => (float) $row->total_debit,
+            'credit' => (float) $row->total_credit,
+        ])->toArray();
+
+        // Compute totals for header display
+        $totalDebit  = 0.0;
+        $totalCredit = 0.0;
+        foreach ($this->cachedTotals as $row) {
+            $net = $row['debit'] - $row['credit'];
+            if ($net > 0) $totalDebit  += $net;
+            else          $totalCredit += abs($net);
+        }
+        $this->totalDebit  = round($totalDebit, 2);
+        $this->totalCredit = round($totalCredit, 2);
+        $this->isBalanced  = abs($totalDebit - $totalCredit) < 0.01;
+
         $this->resetTable();
     }
 
     /**
-     * Filament Native Table implementation for Trial Balance
+     * Filament Native Table — uses cachedTotals, ZERO per-row DB queries.
      */
     public function table(Table $table): Table
     {
@@ -85,12 +103,7 @@ class TrialBalance extends Page implements HasForms, HasTable
             ->query(
                 Account::active()
                     ->whereNotNull('parent_id') // Leaf accounts only
-                    // Only show accounts that have transaction lines in the selected period
-                    ->whereHas('journalEntryLines.journalEntry', function ($query) {
-                        $query->where('fiscal_period_id', $this->fiscal_period_id)
-                              ->where('status', 'posted')
-                              ->whereNull('deleted_at');
-                    })
+                    ->orderBy('code')
             )
             ->columns([
                 TextColumn::make('code')
@@ -111,29 +124,39 @@ class TrialBalance extends Page implements HasForms, HasTable
                     ->badge()
                     ->colors([
                         'primary' => 'Aset',
-                        'amber' => 'Kewajiban',
+                        'amber'   => 'Kewajiban',
                         'emerald' => 'Ekuitas',
-                        'indigo' => 'Pendapatan',
-                        'rose' => 'Beban',
+                        'indigo'  => 'Pendapatan',
+                        'rose'    => 'Beban',
                     ]),
 
                 TextColumn::make('debit')
                     ->label('Saldo Debet')
-                    ->getStateUsing(fn ($record) => (float)$record->getTrialBalanceForPeriod($this->fiscal_period_id)['debit'])
-                    ->formatStateUsing(fn ($state) => $state < 0 ? '(Rp ' . number_format(abs($state), 2, ',', '.') . ')' : 'Rp ' . number_format($state, 2, ',', '.'))
+                    ->getStateUsing(function ($record) {
+                        $row = $this->cachedTotals[$record->id] ?? null;
+                        if (!$row) return 0.0;
+                        $net = $row['debit'] - $row['credit'];
+                        return $net > 0 ? $net : 0.0;
+                    })
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 2, ',', '.'))
                     ->alignEnd()
                     ->color('primary')
                     ->weight('semibold'),
 
                 TextColumn::make('credit')
                     ->label('Saldo Kredit')
-                    ->getStateUsing(fn ($record) => (float)$record->getTrialBalanceForPeriod($this->fiscal_period_id)['credit'])
-                    ->formatStateUsing(fn ($state) => $state < 0 ? '(Rp ' . number_format(abs($state), 2, ',', '.') . ')' : 'Rp ' . number_format($state, 2, ',', '.'))
+                    ->getStateUsing(function ($record) {
+                        $row = $this->cachedTotals[$record->id] ?? null;
+                        if (!$row) return 0.0;
+                        $net = $row['debit'] - $row['credit'];
+                        return $net < 0 ? abs($net) : 0.0;
+                    })
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 2, ',', '.'))
                     ->alignEnd()
                     ->color('success')
                     ->weight('semibold'),
             ])
             ->defaultSort('code', 'asc')
-            ->paginated(false); // Show all active accounts in one view
+            ->paginated(false);
     }
 }

@@ -9,20 +9,20 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class RecentJournalsWidget extends BaseWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
 
     protected int | string | array $columnSpan = 'full';
 
     protected static ?string $heading = 'Jurnal Terbaru';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasAnyRole(['owner', 'finance']) ?? false;
+    }
+
     public function table(Table $table): Table
     {
         $query = JournalEntry::query()->posted();
-
-        // Staff can only see their own journals
-        if (auth()->user()?->hasRole('staff')) {
-            $query->where('created_by', auth()->id());
-        }
 
         return $table
             ->query($query->latest('entry_date')->limit(5))

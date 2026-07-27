@@ -178,7 +178,7 @@ class AccountSeeder extends Seeder
 
             // ═══════════════════════════════════════
             // BEBAN ADMIN BANK & PAJAK (8xxx) — Laba Rugi, Saldo Normal: Debet
-            // ═══════════════════════════════════════
+            // 
 
             ['code' => '8100', 'name' => 'Beban Administrasi & Pajak', 'type' => 'Beban', 'normal_balance' => 'Debet', 'report_category' => 'Laba Rugi', 'cash_flow_category' => 'Operasi', 'parent_code' => null],
             ['code' => '8110', 'name' => 'Beban Admin Bank', 'type' => 'Beban', 'normal_balance' => 'Debet', 'report_category' => 'Laba Rugi', 'cash_flow_category' => 'Operasi', 'parent_code' => '8100'],

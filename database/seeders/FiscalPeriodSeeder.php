@@ -13,9 +13,9 @@ class FiscalPeriodSeeder extends Seeder
     public function run(): void
     {
         FiscalPeriod::create([
-            'name' => 'Juni 2026',
-            'start_date' => '2026-06-01',
-            'end_date' => '2026-06-30',
+            'name' => 'Juli 2026',
+            'start_date' => '2026-07-01',
+            'end_date' => '2026-07-31',
             'status' => 'open',
         ]);
     }

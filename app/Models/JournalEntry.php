@@ -20,15 +20,23 @@ class JournalEntry extends Model
         'created_by',
         'is_closing',
         'status',
+        'submitted_by',
+        'submitted_at',
         'posted_by',
         'posted_at',
     ];
+
+    /**
+     * Eager load lines + account by default to avoid N+1 on table views.
+     */
+    protected $with = ['lines.account'];
 
     protected function casts(): array
     {
         return [
             'entry_date' => 'date',
             'is_closing' => 'boolean',
+            'submitted_at' => 'datetime',
             'posted_at'  => 'datetime',
         ];
     }
@@ -50,6 +58,11 @@ class JournalEntry extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function submittedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 
     public function postedBy(): BelongsTo

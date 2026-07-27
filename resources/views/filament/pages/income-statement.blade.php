@@ -30,6 +30,7 @@
 
         @if(!empty($reportData))
         <!-- Pure HTML/Tailwind Report Layout -->
+        <div class="w-full">
         <div class="bg-white dark:bg-gray-900 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 rounded-xl overflow-hidden">
             <div class="p-6 md:p-10 border-b border-gray-200 dark:border-gray-800 text-center">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight uppercase">Laporan Laba Rugi</h1>

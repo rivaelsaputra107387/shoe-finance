@@ -11,3 +11,20 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Suppress unnecessary Filament / Livewire loading overlays.
+   Buttons dan tabel tidak perlu menampilkan spinner untuk setiap klik.
+   Loading tetap akan muncul jika operasi memang butuh waktu lama.
+───────────────────────────────────────────────────────────────── */
+
+/* Sembunyikan loading overlay/backdrop di atas tabel */
+[wire\:loading].fi-ta-loading-overlay,
+.fi-loading-overlay {
+    display: none !important;
+}
+
+/* Percepat transisi opacity agar loading tidak "ngelag" visual */
+[wire\:loading] {
+    transition-delay: 800ms !important;
+}

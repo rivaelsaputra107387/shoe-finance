@@ -29,7 +29,9 @@ class JournalEntryForm extends Component
     public $accounts = [];
     public $activePeriod = null;
 
-    public function mount(): void
+    public ?JournalEntry $record = null;
+
+    public function mount(JournalEntry $record = null): void
     {
         $this->accounts = Account::active()
             ->whereNotNull('parent_id') // Only leaf accounts (not group headers)
@@ -40,19 +42,37 @@ class JournalEntryForm extends Component
 
         $this->activePeriod = FiscalPeriod::active();
 
-        if ($this->activePeriod) {
-            $this->entry_date = now()->format('Y-m-d');
-            // Clamp to period range
-            if (now()->lt($this->activePeriod->start_date)) {
-                $this->entry_date = $this->activePeriod->start_date->format('Y-m-d');
-            } elseif (now()->gt($this->activePeriod->end_date)) {
-                $this->entry_date = $this->activePeriod->end_date->format('Y-m-d');
+        if ($record && $record->exists) {
+            $this->record = $record;
+            $this->entry_date = $record->entry_date->format('Y-m-d');
+            $this->description = $record->description;
+            $this->reference = $record->reference ?? '';
+            
+            $this->lines = [];
+            foreach ($record->lines as $line) {
+                $this->lines[] = [
+                    'account_id' => $line->account_id,
+                    'description' => $line->description ?? '',
+                    'debit' => $line->debit > 0 ? $line->debit : '',
+                    'credit' => $line->credit > 0 ? $line->credit : '',
+                ];
             }
-        }
+            $this->calculateTotals();
+        } else {
+            if ($this->activePeriod) {
+                $this->entry_date = now()->format('Y-m-d');
+                // Clamp to period range
+                if (now()->lt($this->activePeriod->start_date)) {
+                    $this->entry_date = $this->activePeriod->start_date->format('Y-m-d');
+                } elseif (now()->gt($this->activePeriod->end_date)) {
+                    $this->entry_date = $this->activePeriod->end_date->format('Y-m-d');
+                }
+            }
 
-        // Start with 2 empty rows
-        $this->addLine();
-        $this->addLine();
+            // Start with 2 empty rows
+            $this->addLine();
+            $this->addLine();
+        }
     }
 
     public function addLine(): void
@@ -176,17 +196,29 @@ class JournalEntryForm extends Component
 
         try {
             DB::transaction(function () {
-                $journalEntry = JournalEntry::create([
-                    'entry_date' => $this->entry_date,
-                    'reference' => $this->reference ?: null,
-                    'description' => $this->description,
-                    'fiscal_period_id' => $this->activePeriod->id,
-                    'created_by' => auth()->id(),
-                    'is_closing' => false,
-                    'status' => auth()->user()->hasRole('staff') ? 'draft' : 'posted',
-                    'posted_by' => auth()->user()->hasRole('staff') ? null : auth()->id(),
-                    'posted_at' => auth()->user()->hasRole('staff') ? null : now(),
-                ]);
+                if ($this->record && $this->record->exists) {
+                    $journalEntry = $this->record;
+                    $journalEntry->update([
+                        'entry_date' => $this->entry_date,
+                        'reference' => $this->reference ?: null,
+                        'description' => $this->description,
+                        // fiscal_period_id remains the same for now, or could be updated if needed
+                    ]);
+                    // Delete old lines
+                    $journalEntry->lines()->delete();
+                } else {
+                    $journalEntry = JournalEntry::create([
+                        'entry_date' => $this->entry_date,
+                        'reference' => $this->reference ?: null,
+                        'description' => $this->description,
+                        'fiscal_period_id' => $this->activePeriod->id,
+                        'created_by' => auth()->id(),
+                        'is_closing' => false,
+                        'status' => auth()->user()->hasRole('staff') ? 'draft' : 'posted',
+                        'posted_by' => auth()->user()->hasRole('staff') ? null : auth()->id(),
+                        'posted_at' => auth()->user()->hasRole('staff') ? null : now(),
+                    ]);
+                }
 
                 foreach ($this->lines as $line) {
                     $debit = floatval($line['debit'] ?? 0);

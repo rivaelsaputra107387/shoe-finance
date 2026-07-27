@@ -98,13 +98,17 @@ class Account extends Model
      * Calculate the balance for this account within a fiscal period.
      * Returns positive value in the direction of normal_balance.
      */
-    public function getBalanceForPeriod(int $fiscalPeriodId): float
+    public function getBalanceForPeriod(int $fiscalPeriodId, bool $excludeClosing = false): float
     {
         $totals = $this->journalEntryLines()
-            ->whereHas('journalEntry', function ($q) use ($fiscalPeriodId) {
+            ->whereHas('journalEntry', function ($q) use ($fiscalPeriodId, $excludeClosing) {
                 $q->where('fiscal_period_id', $fiscalPeriodId)
                   ->where('status', 'posted')
                   ->whereNull('deleted_at');
+                
+                if ($excludeClosing) {
+                    $q->where('is_closing', false);
+                }
             })
             ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
             ->first();
@@ -124,11 +128,65 @@ class Account extends Model
     /**
      * Get raw debit and credit totals for a fiscal period.
      */
-    public function getRawTotalsForPeriod(int $fiscalPeriodId): array
+    public function getRawTotalsForPeriod(int $fiscalPeriodId, bool $excludeClosing = false): array
     {
         $totals = $this->journalEntryLines()
-            ->whereHas('journalEntry', function ($q) use ($fiscalPeriodId) {
+            ->whereHas('journalEntry', function ($q) use ($fiscalPeriodId, $excludeClosing) {
                 $q->where('fiscal_period_id', $fiscalPeriodId)
+                  ->where('status', 'posted')
+                  ->whereNull('deleted_at');
+                
+                if ($excludeClosing) {
+                    $q->where('is_closing', false);
+                }
+            })
+            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
+            ->first();
+
+        return [
+            'debit' => (float) $totals->total_debit,
+            'credit' => (float) $totals->total_credit,
+        ];
+    }
+
+    /**
+     * Get cumulative raw debit and credit totals UP TO the end of a fiscal period.
+     */
+    public function getCumulativeRawTotalsForPeriod(int $fiscalPeriodId): array
+    {
+        $period = FiscalPeriod::find($fiscalPeriodId);
+        if (!$period) {
+            return ['debit' => 0.0, 'credit' => 0.0];
+        }
+
+        $totals = $this->journalEntryLines()
+            ->whereHas('journalEntry', function ($q) use ($period) {
+                $q->where('entry_date', '<=', $period->end_date)
+                  ->where('status', 'posted')
+                  ->whereNull('deleted_at');
+            })
+            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
+            ->first();
+
+        return [
+            'debit' => (float) $totals->total_debit,
+            'credit' => (float) $totals->total_credit,
+        ];
+    }
+
+    /**
+     * Get cumulative raw debit and credit totals BEFORE the start of a fiscal period.
+     */
+    public function getCumulativeRawTotalsBeforePeriod(int $fiscalPeriodId): array
+    {
+        $period = FiscalPeriod::find($fiscalPeriodId);
+        if (!$period) {
+            return ['debit' => 0.0, 'credit' => 0.0];
+        }
+
+        $totals = $this->journalEntryLines()
+            ->whereHas('journalEntry', function ($q) use ($period) {
+                $q->where('entry_date', '<', $period->start_date)
                   ->where('status', 'posted')
                   ->whereNull('deleted_at');
             })
@@ -148,6 +206,23 @@ class Account extends Model
     public function getTrialBalanceForPeriod(int $fiscalPeriodId): array
     {
         $totals = $this->getRawTotalsForPeriod($fiscalPeriodId);
+        $balance = $totals['debit'] - $totals['credit'];
+
+        if ($balance > 0) {
+            return ['debit' => $balance, 'credit' => 0];
+        } elseif ($balance < 0) {
+            return ['debit' => 0, 'credit' => abs($balance)];
+        }
+
+        return ['debit' => 0, 'credit' => 0];
+    }
+
+    /**
+     * Get cumulative debit/credit balance for trial balance display up to a period.
+     */
+    public function getCumulativeTrialBalanceForPeriod(int $fiscalPeriodId): array
+    {
+        $totals = $this->getCumulativeRawTotalsForPeriod($fiscalPeriodId);
         $balance = $totals['debit'] - $totals['credit'];
 
         if ($balance > 0) {

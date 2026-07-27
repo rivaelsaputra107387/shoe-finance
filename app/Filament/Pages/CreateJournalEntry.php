@@ -8,7 +8,7 @@ class CreateJournalEntry extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-plus-circle';
 
-    protected static ?string $navigationLabel = 'Input Jurnal Baru';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationGroup = 'Transaksi';
 

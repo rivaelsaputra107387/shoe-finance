@@ -17,6 +17,7 @@ class IncomeStatement extends Page
     protected static string $view = 'filament.pages.income-statement';
 
     public ?int $fiscal_period_id = null;
+    public ?array $data = [];
     public array $reportData = [];
 
     public static function shouldRegisterNavigation(): bool

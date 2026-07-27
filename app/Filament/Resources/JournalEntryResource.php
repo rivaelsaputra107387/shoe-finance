@@ -26,7 +26,7 @@ class JournalEntryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Daftar Jurnal';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -55,17 +55,60 @@ class JournalEntryResource extends Resource
                     ->wrap()
                     ->limit(80),
 
-                Tables\Columns\TextColumn::make('total_debit')
-                    ->label('Total Debit')
-                    ->getStateUsing(fn (JournalEntry $record) => (float)$record->lines()->sum('debit'))
-                    ->formatStateUsing(fn ($state) => $state < 0 ? '(Rp ' . number_format(abs($state), 2, ',', '.') . ')' : 'Rp ' . number_format($state, 2, ',', '.'))
-                    ->alignEnd(),
+                Tables\Columns\TextColumn::make('lines_account')
+                    ->label('Akun COA')
+                    ->getStateUsing(function (JournalEntry $record) {
+                        $html = '<div class="flex flex-col text-sm whitespace-nowrap">';
+                        foreach ($record->lines->sortByDesc('debit') as $line) {
+                            $indent = $line->credit > 0 ? 'pl-4' : '';
+                            $html .= '<div class="py-2 flex flex-col leading-tight ' . $indent . '">';
+                            $html .= '<span class="font-mono text-gray-500">' . ($line->account->code ?? '') . '</span>';
+                            $html .= '<span class="font-medium">' . ($line->account->name ?? '') . '</span>';
+                            $html .= '</div>';
+                        }
+                        $html .= '</div>';
+                        return new \Illuminate\Support\HtmlString($html);
+                    }),
 
-                Tables\Columns\TextColumn::make('total_credit')
-                    ->label('Total Kredit')
-                    ->getStateUsing(fn (JournalEntry $record) => (float)$record->lines()->sum('credit'))
-                    ->formatStateUsing(fn ($state) => $state < 0 ? '(Rp ' . number_format(abs($state), 2, ',', '.') . ')' : 'Rp ' . number_format($state, 2, ',', '.'))
-                    ->alignEnd(),
+                Tables\Columns\TextColumn::make('lines_debit')
+                    ->label('Debit')
+                    ->alignEnd()
+                    ->getStateUsing(function (JournalEntry $record) {
+                        $html = '<div class="flex flex-col text-sm tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">';
+                        foreach ($record->lines->sortByDesc('debit') as $line) {
+                            $html .= '<div class="py-2 flex flex-col leading-tight items-end">';
+                            if ($line->debit > 0) {
+                                $html .= '<span class="text-xs text-gray-500">Rp</span>';
+                                $html .= '<span>' . number_format($line->debit, 2, ',', '.') . '</span>';
+                            } else {
+                                $html .= '<span class="text-xs opacity-0">Rp</span>';
+                                $html .= '<span class="text-gray-400">-</span>';
+                            }
+                            $html .= '</div>';
+                        }
+                        $html .= '</div>';
+                        return new \Illuminate\Support\HtmlString($html);
+                    }),
+
+                Tables\Columns\TextColumn::make('lines_credit')
+                    ->label('Kredit')
+                    ->alignEnd()
+                    ->getStateUsing(function (JournalEntry $record) {
+                        $html = '<div class="flex flex-col text-sm tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">';
+                        foreach ($record->lines->sortByDesc('debit') as $line) {
+                            $html .= '<div class="py-2 flex flex-col leading-tight items-end">';
+                            if ($line->credit > 0) {
+                                $html .= '<span class="text-xs text-gray-500">Rp</span>';
+                                $html .= '<span>' . number_format($line->credit, 2, ',', '.') . '</span>';
+                            } else {
+                                $html .= '<span class="text-xs opacity-0">Rp</span>';
+                                $html .= '<span class="text-gray-400">-</span>';
+                            }
+                            $html .= '</div>';
+                        }
+                        $html .= '</div>';
+                        return new \Illuminate\Support\HtmlString($html);
+                    }),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Dibuat Oleh')
@@ -77,6 +120,7 @@ class JournalEntryResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'draft' => 'warning',
+                        'unapproved' => 'info',
                         'posted' => 'success',
                         default => 'gray',
                     })
@@ -113,6 +157,7 @@ class JournalEntryResource extends Resource
                     ->label('Status')
                     ->options([
                         'draft' => 'Draft',
+                        'unapproved' => 'Unapproved',
                         'posted' => 'Posted',
                     ]),
 
@@ -134,15 +179,74 @@ class JournalEntryResource extends Resource
                     ->falseLabel('Jurnal Umum'),
             ])
             ->actions([
-                Tables\Actions\Action::make('post')
-                    ->label('Posting')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->visible(fn (JournalEntry $record) => $record->status === 'draft' && auth()->user()?->hasAnyRole(['owner', 'finance']))
-                    ->action(fn (JournalEntry $record) => $record->post()),
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('submit_approval')
+                        ->label('Submit')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->color('primary')
+                        ->requiresConfirmation()
+                        ->visible(fn (JournalEntry $record) => $record->status === 'draft' && auth()->user()?->hasAnyRole(['staff', 'owner', 'finance']))
+                        ->action(function (JournalEntry $record) {
+                            $record->update([
+                                'status' => 'unapproved',
+                                'submitted_by' => auth()->id(),
+                                'submitted_at' => now(),
+                            ]);
+                            \App\Models\BankMutation::where('journal_entry_id', $record->id)->update(['status' => 'unapproved']);
+                            
+                            \Filament\Notifications\Notification::make()
+                                ->title('Berhasil di-submit untuk Approval')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Tables\Actions\Action::make('approve_post')
+                        ->label('Approve & Post')
+                        ->icon('heroicon-o-check-badge')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->visible(fn (JournalEntry $record) => in_array($record->status, ['draft', 'unapproved']) && auth()->user()?->hasAnyRole(['owner', 'finance']))
+                        ->action(function (JournalEntry $record) {
+                            // Cek jika masih ada Akun Sementara (9999)
+                            if ($record->lines()->whereHas('account', fn($q) => $q->where('code', '9999'))->exists()) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Gagal Posting')
+                                    ->body('Harap Lengkapi Akun terlebih dahulu (Ganti Akun Sementara 9999) sebelum melakukan posting.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+                            
+                            $record->post(); // Uses existing model logic
+                            \App\Models\BankMutation::where('journal_entry_id', $record->id)->update(['status' => 'posted', 'posted_by' => auth()->id()]);
+                            
+                            \Filament\Notifications\Notification::make()
+                                ->title('Jurnal berhasil di-posting')
+                                ->success()
+                                ->send();
+                        }),
+
+                    Tables\Actions\Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->visible(fn (JournalEntry $record) => $record->status === 'unapproved' && auth()->user()?->hasAnyRole(['owner', 'finance']))
+                        ->action(function (JournalEntry $record) {
+                            $record->update([
+                                'status' => 'draft',
+                                'submitted_by' => null,
+                                'submitted_at' => null,
+                            ]);
+                            \App\Models\BankMutation::where('journal_entry_id', $record->id)->update(['status' => 'drafted']);
+                        }),
+
+                    Tables\Actions\EditAction::make()
+                        ->visible(fn (JournalEntry $record) => in_array($record->status, ['draft', 'unapproved'])),
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn (JournalEntry $record) => $record->status === 'draft'),
+                ])->button()->label('Aksi')->icon('heroicon-m-chevron-down'),
             ])
             ->bulkActions([]);
     }
@@ -187,6 +291,7 @@ class JournalEntryResource extends Resource
         return [
             'index' => Pages\ListJournalEntries::route('/'),
             'view' => Pages\ViewJournalEntry::route('/{record}'),
+            'edit' => Pages\EditJournalEntry::route('/{record}/edit'),
         ];
     }
 
@@ -200,6 +305,11 @@ class JournalEntryResource extends Resource
         if (auth()->user()?->hasRole('staff')) {
             $query->where('created_by', auth()->id());
         }
+
+        // Jangan tampilkan jurnal yang masih menggunakan akun sementara (Draft Jurnal Mutasi)
+        $query->whereDoesntHave('lines.account', function ($q) {
+            $q->where('code', '9999');
+        });
 
         return $query;
     }

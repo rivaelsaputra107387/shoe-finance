@@ -6,10 +6,8 @@ use App\Models\FiscalPeriod;
 use App\Services\BalanceSheetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Pages\Page;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Filament\Infolists\Contracts\HasInfolists;
 use Filament\Infolists\Infolist;
@@ -31,6 +29,7 @@ class BalanceSheet extends Page implements HasForms, HasInfolists
     protected static string $view = 'filament.pages.balance-sheet';
 
     public ?int $fiscal_period_id = null;
+    public ?array $data = [];
     public array $reportData = [];
 
     public static function shouldRegisterNavigation(): bool
@@ -51,15 +50,14 @@ class BalanceSheet extends Page implements HasForms, HasInfolists
         }
     }
 
-    public function form(Form $form): Form
+    public function updatedFiscalPeriodId(): void
     {
-        return $form->schema([
-            Select::make('fiscal_period_id')
-                ->label('Periode')
-                ->options(FiscalPeriod::orderByDesc('start_date')->pluck('name', 'id'))
-                ->required()
-                ->reactive(),
-        ])->columns(1);
+        $this->generateReport();
+    }
+
+    public function getAvailablePeriodsProperty()
+    {
+        return FiscalPeriod::orderByDesc('start_date')->get();
     }
 
     public function generateReport(): void

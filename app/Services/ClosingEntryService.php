@@ -32,6 +32,24 @@ class ClosingEntryService
             throw new \Exception("Periode '{$period->name}' sudah ditutup.");
         }
 
+        // Layer 1: Cek apakah ada jurnal berstatus draft/unapproved
+        $unpostedJournals = JournalEntry::where('fiscal_period_id', $fiscalPeriodId)
+            ->whereIn('status', ['draft', 'unapproved'])
+            ->count();
+            
+        if ($unpostedJournals > 0) {
+            throw new \Exception("Gagal menutup periode: Terdapat {$unpostedJournals} jurnal (manual/mutasi) yang masih berstatus Draft atau Unapproved. Silakan lengkapi, approve, atau hapus jurnal tersebut terlebih dahulu.");
+        }
+
+        // Layer 2: Cek saldo Akun Sementara / Suspense Account
+        $suspenseAccount = Account::where('code', '9999')->first();
+        if ($suspenseAccount) {
+            $suspenseBalance = $suspenseAccount->getBalanceForPeriod($fiscalPeriodId);
+            if (abs($suspenseBalance) > 0.01) {
+                throw new \Exception("Gagal menutup periode: Akun Sementara (9999) memiliki saldo menggantung sebesar Rp " . number_format($suspenseBalance, 2, ',', '.') . ". Pastikan semua jurnal mutasi bank telah dilengkapi.");
+            }
+        }
+
         $ikhtisarAccount = Account::where('code', '3200')->firstOrFail();
         $modalAccount = Account::where('code', '3110')->firstOrFail();
         $createdBy = auth()->id();

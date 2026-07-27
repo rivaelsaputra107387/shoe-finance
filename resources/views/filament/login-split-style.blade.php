@@ -166,23 +166,63 @@ main.fi-simple-main, .fi-simple-main {
     line-height: 1.5;
 }
 
-/* Button style */
+/* ─── Label uppercase bold seperti referensi ─── */
+.fi-simple-main label {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    color: #0f172a !important;
+}
+
+/* ─── Icon prefix warna abu-abu ─── */
+.fi-simple-main .fi-input-wrp svg {
+    color: #94a3b8 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* ─── Ingat saya + Lupa Kata Sandi? baris horizontal ─── */
+.fi-simple-main .fi-fo-field-wrp:has(input[type="checkbox"]) {
+    margin-bottom: 4px !important;
+}
+.fi-simple-main .fi-checkbox-label {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #475569 !important;
+}
+
+/* ─── Button gradient orange seperti referensi ─── */
 button[type="submit"] {
-    background: #f59e0b !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
     color: white !important;
-    border-radius: 8px !important;
-    padding: 12px !important;
+    border-radius: 10px !important;
+    padding: 14px 24px !important;
     font-weight: 700 !important;
     font-size: 16px !important;
     border: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 4px 15px rgba(245,158,11,0.35) !important;
+    width: 100% !important;
+    letter-spacing: 0.01em !important;
+    transition: all 0.2s ease !important;
 }
 button[type="submit"] * {
     color: white !important;
 }
 button[type="submit"]:hover {
-    background: #d97706 !important;
+    background: linear-gradient(135deg, #d97706 0%, #c2410c 100%) !important;
+    box-shadow: 0 6px 20px rgba(245,158,11,0.45) !important;
+    transform: translateY(-1px) !important;
 }
+
+/* ─── Placeholder teks lebih soft ─── */
+.fi-simple-main input::placeholder {
+    color: #cbd5e1 !important;
+    font-weight: 400 !important;
+}
+
 
 /* Floating cards animation */
 @keyframes float1 {
@@ -197,6 +237,39 @@ button[type="submit"]:hover {
 }
 .card-1 { animation: float1 7s ease-in-out infinite; }
 .card-2 { animation: float2 8s ease-in-out infinite; }
+
+/* Responsive: hide left panel on mobile */
+@media (max-width: 1024px) {
+    #split-left-panel {
+        display: none !important;
+    }
+    .fi-layout {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* ─── Error inline: sembunyikan teks spasi, biarkan border merah ─── */
+
+/* Teks error inline sudah di-handle oleh banner Livewire di atas form */
+.fi-simple-main .fi-fo-field-wrp-error-message {
+    display: none !important;
+}
+
+/* Border field email jadi merah saat error */
+.fi-simple-main .fi-fo-field-wrp-has-errors .fi-input-wrp {
+    border-color: #ef4444 !important;
+    outline: 1px solid #ef4444 !important;
+}
+
+/* Placeholder banner: hapus padding bawaan Filament di container placeholder */
+.fi-simple-main .fi-fo-placeholder {
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+.fi-simple-main .fi-fo-placeholder label {
+    display: none !important;
+}
 
 /* Responsive: hide left panel on mobile */
 @media (max-width: 1024px) {
