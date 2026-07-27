@@ -45,110 +45,66 @@ class ListBankMutations extends ListRecords
                     Forms\Components\Select::make('bank_source')
                         ->label('Pilih Format Bank')
                         ->options([
+                            'AUTO' => 'Otomatis Deteksi (Rekomendasi - BCA & Mandiri)',
                             'BCA' => 'BCA (Terdapat kolom mutasi gabungan)',
                             'MANDIRI' => 'Mandiri (Terdapat kolom Debit dan Kredit terpisah)',
                         ])
+                        ->default('AUTO')
                         ->required(),
                     Forms\Components\FileUpload::make('file')
-                        ->label('File CSV')
-                        ->acceptedFileTypes(['text/csv', 'text/plain', 'application/vnd.ms-excel'])
+                        ->label('File CSV / Excel Export')
+                        ->acceptedFileTypes([
+                            'text/csv',
+                            'text/plain',
+                            'text/x-csv',
+                            'application/csv',
+                            'application/x-csv',
+                            'text/comma-separated-values',
+                            'text/x-comma-separated-values',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/octet-stream',
+                        ])
                         ->required()
-                        ->helperText('Pastikan Anda meng-export mutasi internet banking dalam format CSV.'),
+                        ->helperText('Unggah file CSV / TXT / Excel ekspor mutasi internet banking BCA/Mandiri (tidak perlu menghapus baris judul di atasnya).'),
                 ])
                 ->action(function (array $data) {
                     try {
                         $filePath = Storage::disk('public')->path($data['file']);
-                        $bankSource = $data['bank_source'];
-                        
-                        $file = fopen($filePath, 'r');
-                        $headerSkipped = false;
-                        
-                        $count = 0;
-                        while (($row = fgetcsv($file, 1000, ',')) !== false) {
-                            // BCA biasanya header ada di baris 5, atau kita abaikan row kosong.
-                            // Untuk MVP, kita asumsikan CSV yang diupload sudah dibersihkan (baris pertama header).
-                            if (!$headerSkipped) {
-                                $headerSkipped = true;
-                                continue;
-                            }
+                        $bankSource = $data['bank_source'] ?? 'AUTO';
 
-                            // Hindari baris kosong
-                            if (empty(array_filter($row))) continue;
+                        $parser = app(\App\Services\BankMutationParserService::class);
+                        $records = $parser->parse($filePath, $bankSource);
 
-                            if ($bankSource === 'BCA') {
-                                // BCA CSV Real Structure:
-                                // 0: tgl (DD/MM/YYYY), 1: Keterangan, 2: Cabang, 3: Jumlah, 4: Saldo
-                                $dateRaw = $row[0] ?? null;
-                                $desc = $row[1] ?? '';
-                                $jumlahStr = $row[3] ?? '';
-                                
-                                if (!$dateRaw || strlen($dateRaw) < 8) continue;
-
-                                $isCredit = str_contains(strtoupper($jumlahStr), 'CR');
-                                // Hapus koma pemisah ribuan, hapus 'CR' dan 'DB', dan trim spasi
-                                $amountRaw = str_replace([',', 'CR', 'DB', 'cr', 'db', ' '], '', $jumlahStr);
-                                $mutation_type = $isCredit ? 'IN' : 'OUT'; // BCA CR = Uang Masuk, DB/None = Keluar
-
-                                BankMutation::create([
-                                    'date' => Carbon::createFromFormat('d/m/Y', $dateRaw)->format('Y-m-d'),
-                                    'description' => $desc,
-                                    'amount' => (float)$amountRaw,
-                                    'bank_source' => 'BCA',
-                                    'mutation_type' => $mutation_type,
-                                    'status' => 'pending',
-                                    'uploaded_by' => auth()->id(),
-                                ]);
-                                $count++;
-
-                            } else if ($bankSource === 'MANDIRI') {
-                                // Mandiri CSV Real Structure:
-                                // 0: Tanggal (DD Mmm YYYY), 1: Deskripsi, 2: Kredit, 3: Debit, 4: Saldo
-                                $dateRaw = $row[0] ?? null;
-                                $desc = $row[1] ?? '';
-                                $creditRaw = str_replace([','], '', $row[2] ?? '0');
-                                $debitRaw = str_replace([','], '', $row[3] ?? '0');
-                                
-                                if (!$dateRaw || strlen($dateRaw) < 8) continue;
-
-                                // Uang masuk (Kredit bank) = Mutasi IN
-                                $isCredit = ((float)$creditRaw > 0);
-
-                                if ($isCredit) {
-                                    $amount = (float)$creditRaw;
-                                    $mutation_type = 'IN'; 
-                                } else {
-                                    $amount = (float)$debitRaw;
-                                    $mutation_type = 'OUT';
-                                }
-
-                                // Mandiri date format: "1 July 2026" or "01 Jul 2026"
-                                try {
-                                    $dateParsed = Carbon::parse($dateRaw)->format('Y-m-d');
-                                } catch (\Exception $e) {
-                                    // Fallback to exactly d/m/Y if parsing fails
-                                    $dateParsed = Carbon::createFromFormat('d/m/Y', $dateRaw)->format('Y-m-d');
-                                }
-
-                                BankMutation::create([
-                                    'date' => $dateParsed,
-                                    'description' => $desc,
-                                    'amount' => $amount,
-                                    'bank_source' => 'MANDIRI',
-                                    'mutation_type' => $mutation_type,
-                                    'status' => 'pending',
-                                    'uploaded_by' => auth()->id(),
-                                ]);
-                                $count++;
-                            }
+                        if (empty($records)) {
+                            Notification::make()
+                                ->title('Tidak ada data mutasi yang ditemukan')
+                                ->body('Pastikan file CSV memuat kolom tanggal, deskripsi, dan nominal/debit/kredit.')
+                                ->warning()
+                                ->send();
+                            return;
                         }
-                        
-                        fclose($file);
-                        
+
+                        $count = 0;
+                        foreach ($records as $item) {
+                            BankMutation::create([
+                                'date'          => $item['date'],
+                                'description'   => $item['description'],
+                                'amount'        => $item['amount'],
+                                'bank_source'   => $item['bank_source'],
+                                'mutation_type' => $item['mutation_type'],
+                                'status'        => 'pending',
+                                'uploaded_by'   => auth()->id(),
+                            ]);
+                            $count++;
+                        }
+
                         Notification::make()
-                            ->title("Berhasil mengimpor $count baris mutasi!")
+                            ->title("Berhasil mengimpor $count transaksi mutasi!")
+                            ->body("File berhasil diproses secara otomatis.")
                             ->success()
                             ->send();
-                            
+
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Gagal mengimpor file')
