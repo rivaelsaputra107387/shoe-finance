@@ -132,9 +132,9 @@ class JournalEntryResource extends Resource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle'),
 
-                Tables\Columns\IconColumn::make('is_closing')
-                    ->label('Jurnal Penutup')
-                    ->boolean(),
+                // Tables\Columns\IconColumn::make('is_closing')
+                //     ->label('Jurnal Penutup')
+                //     ->boolean(),
 
                 Tables\Columns\TextColumn::make('postedBy.name')
                     ->label('Diposting Oleh')

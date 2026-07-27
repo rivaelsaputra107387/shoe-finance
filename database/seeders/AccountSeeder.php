@@ -184,6 +184,9 @@ class AccountSeeder extends Seeder
             ['code' => '8110', 'name' => 'Beban Admin Bank', 'type' => 'Beban', 'normal_balance' => 'Debet', 'report_category' => 'Laba Rugi', 'cash_flow_category' => 'Operasi', 'parent_code' => '8100'],
             ['code' => '8120', 'name' => 'Beban Pajak', 'type' => 'Beban', 'normal_balance' => 'Debet', 'report_category' => 'Laba Rugi', 'cash_flow_category' => 'Operasi', 'parent_code' => '8100'],
             ['code' => '8130', 'name' => 'Beban Materai', 'type' => 'Beban', 'normal_balance' => 'Debet', 'report_category' => 'Laba Rugi', 'cash_flow_category' => 'Operasi', 'parent_code' => '8100'],
+
+            // Akun Sementara / Suspense (9999)
+            ['code' => '9999', 'name' => 'Akun Sementara / Suspense', 'type' => 'Aset', 'normal_balance' => 'Debet', 'report_category' => 'Neraca', 'cash_flow_category' => null, 'parent_code' => '1100'],
         ];
     }
 }
