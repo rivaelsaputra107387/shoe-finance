@@ -41,7 +41,8 @@ export default function CreateJournal({ periods, accounts }) {
 
     const formatNumberInput = (val) => {
         if (!val && val !== 0) return '';
-        const cleanVal = val.toString().replace(/\D/g, '');
+        const strVal = val.toString().split('.')[0];
+        const cleanVal = strVal.replace(/\D/g, '');
         return cleanVal ? new Intl.NumberFormat('id-ID').format(cleanVal) : '';
     };
 
@@ -56,7 +57,7 @@ export default function CreateJournal({ periods, accounts }) {
     };
 
     const formatRupiah = (val) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val || 0);
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
     };
 
     return (

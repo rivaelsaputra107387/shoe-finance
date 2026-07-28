@@ -32,7 +32,7 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
     };
 
     const formatRupiah = (val) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val || 0);
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
     };
 
     const handlePrint = () => {
