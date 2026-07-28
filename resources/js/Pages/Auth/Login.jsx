@@ -19,16 +19,14 @@ export default function Login() {
             <Head title="Login - SIA Shoe Workshop" />
             <div className="min-h-screen flex bg-gray-900 text-gray-100 font-sans">
                 {/* Left Branding Side */}
-                <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-gray-900 to-slate-950 p-12 flex-col justify-between relative overflow-hidden">
-                    <div className="absolute -top-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+                <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-900 via-gray-900 to-slate-950 p-12 flex-col justify-between relative overflow-hidden">
+                    <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+                    <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
 
                     <div className="relative z-10">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">
-                                S
-                            </div>
-                            <span className="text-xl font-bold tracking-tight text-white">
+                            <img src="/logo.png" alt="Shoe Workshop Logo" className="h-12 w-auto object-contain bg-white/90 p-1.5 rounded-xl shadow-lg" />
+                            <span className="text-xl font-extrabold tracking-tight text-white">
                                 SIA Shoe Workshop
                             </span>
                         </div>
@@ -52,6 +50,9 @@ export default function Login() {
                 <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-950">
                     <div className="w-full max-w-md space-y-8">
                         <div>
+                            <div className="lg:hidden mb-4">
+                                <img src="/logo.png" alt="Shoe Workshop Logo" className="h-10 w-auto object-contain bg-white p-1 rounded-lg" />
+                            </div>
                             <h2 className="text-3xl font-extrabold text-white tracking-tight">
                                 Selamat Datang Kembali
                             </h2>
@@ -98,7 +99,7 @@ export default function Login() {
                                             onChange={(e) => setData('password', e.target.value)}
                                             required
                                             placeholder="••••••••"
-                                            className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                            className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                                         />
                                     </div>
                                     {errors.password && (
@@ -113,7 +114,7 @@ export default function Login() {
                                         type="checkbox"
                                         checked={data.remember}
                                         onChange={(e) => setData('remember', e.target.checked)}
-                                        className="w-4 h-4 rounded border-gray-800 bg-gray-900 text-indigo-600 focus:ring-indigo-500"
+                                        className="w-4 h-4 rounded border-gray-800 bg-gray-900 text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <span className="text-xs text-gray-400">Ingat saya</span>
                                 </label>
@@ -122,7 +123,7 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                             >
                                 <span>{processing ? 'Memproses...' : 'Masuk ke Sistem'}</span>
                                 {!processing && <ArrowRight className="w-4 h-4" />}

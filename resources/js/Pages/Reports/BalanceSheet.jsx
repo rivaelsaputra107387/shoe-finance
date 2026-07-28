@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Scale, CheckCircle2, AlertCircle } from 'lucide-react';
+import CustomSelect from '@/Components/CustomSelect';
+import { Scale, CheckCircle2, AlertCircle, Printer } from 'lucide-react';
 
 export default function BalanceSheet({ periods, selectedPeriodId, reportData }) {
     const [periodId, setPeriodId] = useState(selectedPeriodId || '');
@@ -15,11 +16,16 @@ export default function BalanceSheet({ periods, selectedPeriodId, reportData }) 
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val || 0);
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <AppLayout title="Laporan Neraca (Balance Sheet)">
             <Head title="Laporan Neraca - SIA Shoe Workshop" />
 
             <div className="space-y-6 max-w-5xl mx-auto">
+                {/* Header & Controls Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -30,16 +36,26 @@ export default function BalanceSheet({ periods, selectedPeriodId, reportData }) 
                         </p>
                     </div>
 
-                    <div className="w-full sm:w-64">
-                        <select
-                            value={periodId}
-                            onChange={(e) => handlePeriodChange(e.target.value)}
-                            className="w-full py-2.5 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-semibold text-gray-900 dark:text-white shadow-sm"
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="w-full sm:w-64">
+                            <CustomSelect
+                                value={periodId}
+                                onChange={(e) => handlePeriodChange(e.target.value)}
+                                className="w-full"
+                            >
+                                {periods?.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </CustomSelect>
+                        </div>
+
+                        <button
+                            onClick={handlePrint}
+                            className="px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2 shadow-sm"
                         >
-                            {periods?.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+                            <Printer className="w-4 h-4" />
+                            <span className="hidden sm:inline">Cetak</span>
+                        </button>
                     </div>
                 </div>
 
@@ -72,7 +88,7 @@ export default function BalanceSheet({ periods, selectedPeriodId, reportData }) 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Left Column: ASET */}
                             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 space-y-6">
-                                <h3 className="text-base font-extrabold text-indigo-600 dark:text-indigo-400 border-b pb-2">
+                                <h3 className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 border-b pb-2">
                                     AKTIVA / ASET
                                 </h3>
 
@@ -108,7 +124,7 @@ export default function BalanceSheet({ periods, selectedPeriodId, reportData }) 
                                     </div>
                                 </div>
 
-                                <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-between font-extrabold text-sm text-indigo-600 dark:text-indigo-400">
+                                <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-between font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
                                     <span>TOTAL ASET</span>
                                     <span className="font-mono">{formatRupiah(reportData.total_assets)}</span>
                                 </div>

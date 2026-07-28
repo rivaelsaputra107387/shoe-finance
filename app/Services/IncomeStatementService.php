@@ -99,8 +99,8 @@ class IncomeStatementService
                 // For income accounts (Kredit normal): balance = credit - debit
                 // For expense accounts (Debet normal): balance = debit - credit
                 $balance = $normalBalance === 'Kredit'
-                    ? abs($credit - $debit)
-                    : abs($debit - $credit);
+                    ? ($credit - $debit)
+                    : ($debit - $credit);
 
                 return [
                     'code'    => $account->code,
@@ -108,7 +108,8 @@ class IncomeStatementService
                     'balance' => $balance,
                 ];
             })
-            ->filter(fn ($row) => $row['balance'] > 0);
+            ->filter(fn ($row) => abs($row['balance']) > 0.01)
+            ->values();
     }
 
     /**
@@ -128,8 +129,8 @@ class IncomeStatementService
                 $credit = $row ? (float) $row->total_credit : 0.0;
 
                 $balance = $normalBalance === 'Kredit'
-                    ? abs($credit - $debit)
-                    : abs($debit - $credit);
+                    ? ($credit - $debit)
+                    : ($debit - $credit);
 
                 return [
                     'code'    => $account->code,
@@ -137,6 +138,7 @@ class IncomeStatementService
                     'balance' => $balance,
                 ];
             })
-            ->filter(fn ($row) => $row['balance'] > 0);
+            ->filter(fn ($row) => abs($row['balance']) > 0.01)
+            ->values();
     }
 }

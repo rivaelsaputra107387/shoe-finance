@@ -41,19 +41,43 @@ class BalanceSheetService
         // ── EKUITAS ──
         $equity = $this->getAccountsByPrefix('3', $totals, 'Ekuitas');
 
-        // Tambahkan Laba Bersih hanya untuk periode OPEN
-        if ($period->status === 'open') {
-            $incomeData = (new IncomeStatementService())->generate($fiscalPeriodId);
-            $netProfit  = (float) $incomeData['net_profit'];
-            if (abs($netProfit) > 0.01) {
-                $equity->push([
-                    'code'           => '-',
-                    'name'           => 'Laba Bersih Periode Berjalan',
-                    'type'           => 'Ekuitas',
-                    'normal_balance' => 'Kredit',
-                    'balance'        => $netProfit,
-                ]);
-            }
+        // Hitung Laba Bersih Kumulatif dari totals yang sama (bukan period-only IncomeStatementService)
+        // Pendapatan: 4xxx, 71xx → normal Kredit → balance = credit - debit
+        // Beban: 5xxx, 6xxx, 72xx, 8xxx → normal Debet → balance = debit - credit
+        $balanceSvc     = new AccountBalanceService();
+        $revenuePrefixes = ['4', '71'];
+        $expensePrefixes = ['5', '6', '72', '8'];
+
+        $cumulativeRevenue = Account::active()
+            ->where(function ($q) use ($revenuePrefixes) {
+                foreach ($revenuePrefixes as $pfx) {
+                    $q->orWhere('code', 'like', $pfx . '%');
+                }
+            })
+            ->whereNotNull('parent_id')
+            ->get()
+            ->sum(fn ($a) => $balanceSvc->getBalance($totals, $a->id, 'Kredit'));
+
+        $cumulativeExpenses = Account::active()
+            ->where(function ($q) use ($expensePrefixes) {
+                foreach ($expensePrefixes as $pfx) {
+                    $q->orWhere('code', 'like', $pfx . '%');
+                }
+            })
+            ->whereNotNull('parent_id')
+            ->get()
+            ->sum(fn ($a) => $balanceSvc->getBalance($totals, $a->id, 'Debet'));
+
+        $cumulativeNetProfit = $cumulativeRevenue - $cumulativeExpenses;
+
+        if (abs($cumulativeNetProfit) > 0.01) {
+            $equity->push([
+                'code'           => '-',
+                'name'           => 'Laba Bersih Kumulatif',
+                'type'           => 'Ekuitas',
+                'normal_balance' => 'Kredit',
+                'balance'        => $cumulativeNetProfit,
+            ]);
         }
 
         $totalEquity              = $equity->sum('balance');

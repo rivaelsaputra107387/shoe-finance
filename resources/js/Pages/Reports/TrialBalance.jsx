@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Sheet, CheckCircle2, AlertCircle } from 'lucide-react';
+import CustomSelect from '@/Components/CustomSelect';
+import { Sheet, CheckCircle2, AlertCircle, Printer } from 'lucide-react';
 
 export default function TrialBalance({ periods, selectedPeriodId, reportData }) {
     const [periodId, setPeriodId] = useState(selectedPeriodId || '');
@@ -15,11 +16,16 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val || 0);
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <AppLayout title="Neraca Lajur (Trial Balance)">
             <Head title="Neraca Lajur - SIA Shoe Workshop" />
 
             <div className="space-y-6">
+                {/* Header & Controls Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -30,16 +36,26 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
                         </p>
                     </div>
 
-                    <div className="w-full sm:w-64">
-                        <select
-                            value={periodId}
-                            onChange={(e) => handlePeriodChange(e.target.value)}
-                            className="w-full py-2.5 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-semibold text-gray-900 dark:text-white shadow-sm"
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="w-full sm:w-64">
+                            <CustomSelect
+                                value={periodId}
+                                onChange={(e) => handlePeriodChange(e.target.value)}
+                                className="w-full"
+                            >
+                                {periods?.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </CustomSelect>
+                        </div>
+
+                        <button
+                            onClick={handlePrint}
+                            className="px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2 shadow-sm"
                         >
-                            {periods?.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+                            <Printer className="w-4 h-4" />
+                            <span className="hidden sm:inline">Cetak</span>
+                        </button>
                     </div>
                 </div>
 
@@ -49,7 +65,7 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                                 <span className="text-xs text-gray-500 font-medium block">Total Saldo Debet</span>
-                                <span className="text-xl font-mono font-extrabold text-indigo-600 dark:text-indigo-400 mt-1 block">
+                                <span className="text-xl font-mono font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 block">
                                     {formatRupiah(reportData.total_debit)}
                                 </span>
                             </div>
@@ -103,10 +119,10 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
                                                         {row.type}
                                                     </span>
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                                                <td className="py-3.5 px-4 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
                                                     {row.debit > 0 ? formatRupiah(row.debit) : '-'}
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <td className="py-3.5 px-4 text-right font-mono font-semibold text-rose-600 dark:text-rose-400">
                                                     {row.credit > 0 ? formatRupiah(row.credit) : '-'}
                                                 </td>
                                             </tr>

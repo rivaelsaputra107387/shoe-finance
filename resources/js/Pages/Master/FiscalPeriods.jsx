@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Plus, Calendar, CheckCircle2, Lock, X } from 'lucide-react';
+import { Plus, Calendar, CheckCircle2, Lock, X, Pencil } from 'lucide-react';
 
 export default function FiscalPeriods({ periods }) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [editingPeriod, setEditingPeriod] = useState(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
         start_date: '',
         end_date: '',
+        status: 'open',
     });
 
     const handleCreateSubmit = (e) => {
@@ -17,6 +19,28 @@ export default function FiscalPeriods({ periods }) {
         post('/app/fiscal-periods', {
             onSuccess: () => {
                 setCreateModalOpen(false);
+                reset();
+            },
+        });
+    };
+
+    const handleOpenEdit = (p) => {
+        setEditingPeriod(p);
+        setData({
+            name: p.name,
+            start_date: p.start_date ? p.start_date.substring(0, 10) : '',
+            end_date: p.end_date ? p.end_date.substring(0, 10) : '',
+            status: p.status || 'open',
+        });
+    };
+
+    const handleEditSubmit = (e) => {
+        e.preventDefault();
+        if (!editingPeriod) return;
+
+        put(`/app/fiscal-periods/${editingPeriod.id}`, {
+            onSuccess: () => {
+                setEditingPeriod(null);
                 reset();
             },
         });
@@ -38,7 +62,7 @@ export default function FiscalPeriods({ periods }) {
                     </div>
 
                     <button
-                        onClick={() => setCreateModalOpen(true)}
+                        onClick={() => { reset(); setCreateModalOpen(true); }}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all"
                     >
                         <Plus className="w-4 h-4" />
@@ -55,6 +79,7 @@ export default function FiscalPeriods({ periods }) {
                                     <th className="py-3.5 px-4">Tanggal Mulai</th>
                                     <th className="py-3.5 px-4">Tanggal Selesai</th>
                                     <th className="py-3.5 px-4">Status</th>
+                                    <th className="py-3.5 px-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-800 text-sm">
@@ -73,6 +98,15 @@ export default function FiscalPeriods({ periods }) {
                                                 <span className="capitalize">{p.status}</span>
                                             </span>
                                         </td>
+                                        <td className="py-3.5 px-4 text-right">
+                                            <button
+                                                onClick={() => handleOpenEdit(p)}
+                                                className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                                                title="Edit Periode"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -81,16 +115,18 @@ export default function FiscalPeriods({ periods }) {
                 </div>
             </div>
 
-            {/* Modal */}
-            {createModalOpen && (
+            {/* Create / Edit Modal */}
+            {(createModalOpen || editingPeriod) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 max-w-md w-full shadow-2xl space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-base font-bold text-gray-900 dark:text-white">Tambah Periode Akuntansi</h3>
-                            <button onClick={() => setCreateModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                                {editingPeriod ? 'Edit Periode Akuntansi' : 'Tambah Periode Akuntansi'}
+                            </h3>
+                            <button onClick={() => { setCreateModalOpen(false); setEditingPeriod(null); }} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
                         </div>
 
-                        <form onSubmit={handleCreateSubmit} className="space-y-4 text-xs">
+                        <form onSubmit={editingPeriod ? handleEditSubmit : handleCreateSubmit} className="space-y-4 text-xs">
                             <div>
                                 <label className="block font-semibold mb-1">Nama Periode</label>
                                 <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Misal: Juli 2026" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
@@ -103,9 +139,20 @@ export default function FiscalPeriods({ periods }) {
                                 <label className="block font-semibold mb-1">Tanggal Selesai</label>
                                 <input type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} required className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
+                            {editingPeriod && (
+                                <div>
+                                    <label className="block font-semibold mb-1">Status</label>
+                                    <select value={data.status} onChange={(e) => setData('status', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl">
+                                        <option value="open">Open</option>
+                                        <option value="closed">Closed</option>
+                                    </select>
+                                </div>
+                            )}
                             <div className="flex justify-end gap-3 pt-3">
-                                <button type="button" onClick={() => setCreateModalOpen(false)} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
-                                <button type="submit" disabled={processing} className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl">Simpan Periode</button>
+                                <button type="button" onClick={() => { setCreateModalOpen(false); setEditingPeriod(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
+                                <button type="submit" disabled={processing} className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl">
+                                    {editingPeriod ? 'Perbarui Periode' : 'Simpan Periode'}
+                                </button>
                             </div>
                         </form>
                     </div>

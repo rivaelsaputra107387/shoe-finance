@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 import {
+    LayoutDashboard,
     FileText,
     PlusCircle,
     Building2,
@@ -12,6 +14,8 @@ import {
     Receipt,
     ListTree,
     Calendar,
+    Lock,
+    ShieldCheck,
     LogOut,
     Sun,
     Moon,
@@ -30,6 +34,7 @@ export default function AppLayout({ children, title }) {
             (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
     useEffect(() => {
         if (darkMode) {
@@ -43,15 +48,21 @@ export default function AppLayout({ children, title }) {
 
     const userRoles = auth?.user?.roles || [];
     const isOwnerOrFinance = userRoles.includes('owner') || userRoles.includes('finance');
+    const isOwner = userRoles.includes('owner');
 
     const navigation = [
         {
+            group: 'Utama',
+            items: [
+                { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard, show: true },
+            ].filter(i => i.show),
+        },
+        {
             group: 'Transaksi',
             items: [
-                { name: 'Input Jurnal', href: '/app/journal-entries/create', icon: PlusCircle, show: true },
-                { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
-                { name: 'Mutasi Bank', href: '/app/bank-mutations', icon: Building2, show: isOwnerOrFinance },
+                { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: isOwnerOrFinance },
                 { name: 'Draft Jurnal', href: '/app/draft-journals', icon: BookOpen, show: true },
+                { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
             ].filter(i => i.show),
         },
         {
@@ -66,10 +77,12 @@ export default function AppLayout({ children, title }) {
             ].filter(i => i.show),
         },
         {
-            group: 'Master Data',
+            group: 'Master & Pengaturan',
             items: [
                 { name: 'Chart of Accounts', href: '/app/accounts', icon: ListTree, show: isOwnerOrFinance },
                 { name: 'Periode Akuntansi', href: '/app/fiscal-periods', icon: Calendar, show: isOwnerOrFinance },
+                { name: 'Penutupan Periode', href: '/app/period-closing', icon: Lock, show: isOwner },
+                { name: 'Audit Trail', href: '/app/audit-trail', icon: ShieldCheck, show: isOwner },
             ].filter(i => i.show),
         },
     ];
@@ -105,21 +118,19 @@ export default function AppLayout({ children, title }) {
 
                 {/* Sidebar */}
                 <aside className={`
-                    fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
+                    fixed lg:sticky lg:top-0 lg:h-screen inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
                     {/* Brand / Logo Header */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800 justify-between">
-                        <Link href="/app/journal-entries" className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/20">
-                                S
-                            </div>
+                        <Link href="/app/dashboard" className="flex items-center gap-2.5">
+                            <img src="/logo.png" alt="Shoe Workshop Logo" className="h-8 w-auto object-contain" />
                             <div className="flex flex-col">
-                                <span className="font-bold tracking-tight text-gray-900 dark:text-white leading-none">
-                                    SIA Shoe
+                                <span className="font-extrabold tracking-tight text-gray-900 dark:text-white leading-none text-sm">
+                                    Shoe Workshop
                                 </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Workshop Finance
+                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                                    SIA Finance
                                 </span>
                             </div>
                         </Link>
@@ -149,12 +160,12 @@ export default function AppLayout({ children, title }) {
                                                 className={`
                                                     flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
                                                     ${isActive
-                                                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm'
+                                                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-semibold shadow-sm'
                                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
                                                     }
                                                 `}
                                             >
-                                                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`} />
+                                                <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`} />
                                                 <span>{item.name}</span>
                                             </Link>
                                         );
@@ -181,7 +192,7 @@ export default function AppLayout({ children, title }) {
                                 </div>
                             </div>
                             <button
-                                onClick={() => router.post('/logout')}
+                                onClick={() => setLogoutModalOpen(true)}
                                 title="Logout"
                                 className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                             >
@@ -230,6 +241,18 @@ export default function AppLayout({ children, title }) {
                     </main>
                 </div>
             </div>
+
+            {/* Logout Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={logoutModalOpen}
+                title="Konfirmasi Logout"
+                message="Apakah Anda yakin ingin keluar dari aplikasi SIA Finance?"
+                variant="danger"
+                confirmText="Ya, Logout"
+                cancelText="Batal"
+                onConfirm={() => router.post('/logout')}
+                onClose={() => setLogoutModalOpen(false)}
+            />
         </div>
     );
 }

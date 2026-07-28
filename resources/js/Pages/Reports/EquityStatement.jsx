@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { PieChart } from 'lucide-react';
+import CustomSelect from '@/Components/CustomSelect';
+import { PieChart, Printer } from 'lucide-react';
 
 export default function EquityStatement({ periods, selectedPeriodId, reportData }) {
     const [periodId, setPeriodId] = useState(selectedPeriodId || '');
@@ -15,11 +16,16 @@ export default function EquityStatement({ periods, selectedPeriodId, reportData 
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val || 0);
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <AppLayout title="Laporan Perubahan Ekuitas">
             <Head title="Laporan Perubahan Ekuitas - SIA Shoe Workshop" />
 
             <div className="space-y-6 max-w-3xl mx-auto">
+                {/* Header & Controls Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -30,16 +36,26 @@ export default function EquityStatement({ periods, selectedPeriodId, reportData 
                         </p>
                     </div>
 
-                    <div className="w-full sm:w-64">
-                        <select
-                            value={periodId}
-                            onChange={(e) => handlePeriodChange(e.target.value)}
-                            className="w-full py-2.5 px-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-semibold text-gray-900 dark:text-white shadow-sm"
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="w-full sm:w-64">
+                            <CustomSelect
+                                value={periodId}
+                                onChange={(e) => handlePeriodChange(e.target.value)}
+                                className="w-full"
+                            >
+                                {periods?.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </CustomSelect>
+                        </div>
+
+                        <button
+                            onClick={handlePrint}
+                            className="px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2 shadow-sm"
                         >
-                            {periods?.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+                            <Printer className="w-4 h-4" />
+                            <span className="hidden sm:inline">Cetak</span>
+                        </button>
                     </div>
                 </div>
 
@@ -70,8 +86,8 @@ export default function EquityStatement({ periods, selectedPeriodId, reportData 
                                 </div>
                             )}
 
-                            <div className="flex justify-between py-4 text-base font-extrabold text-indigo-600 dark:text-indigo-400 border-t-2">
-                                <span>MODAL AKHIR PERIODE</span>
+                            <div className="flex justify-between py-4 text-base font-extrabold text-emerald-600 dark:text-emerald-400 border-t-2">
+                                <span className="uppercase">Modal Akhir Periode</span>
                                 <span className="font-mono">{formatRupiah(reportData.ending_capital)}</span>
                             </div>
                         </div>

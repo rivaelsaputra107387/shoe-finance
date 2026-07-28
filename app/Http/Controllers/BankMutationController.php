@@ -26,6 +26,18 @@ class BankMutationController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('mutation_type')) {
+            $query->where('mutation_type', $request->mutation_type);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('description', 'like', "%{$search}%");
@@ -35,7 +47,7 @@ class BankMutationController extends Controller
 
         return Inertia::render('Transactions/BankMutations', [
             'mutations' => $mutations,
-            'filters'   => $request->only(['bank_source', 'status', 'search']),
+            'filters'   => $request->only(['bank_source', 'status', 'mutation_type', 'date_preset', 'start_date', 'end_date', 'search']),
         ]);
     }
 
@@ -78,13 +90,86 @@ class BankMutationController extends Controller
 
     public function generateDraft(BankMutation $bankMutation)
     {
-        $service = app(BankMutationService::class);
-        $entry = $service->draftJournalEntry($bankMutation, auth()->id());
+        try {
+            $service = app(BankMutationService::class);
+            $service->draftJournalEntry($bankMutation, auth()->id());
 
-        if (!$entry) {
-            return back()->with('error', 'Gagal membuat draft jurnal. Pastikan Akun Sementara (9999) ada di sistem.');
+            return back()->with('success', 'Draft Jurnal berhasil dibuat dari Mutasi Bank.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat draft jurnal: ' . $e->getMessage());
+        }
+    }
+
+    public function matchApi(BankMutation $bankMutation)
+    {
+        $service = app(BankMutationService::class);
+        $service->matchWithApi($bankMutation, auth()->id());
+
+        return back()->with('success', 'Berhasil mencocokkan mutasi bank dengan invoice (Match API).');
+    }
+
+    public function bulkGenerateDraft(Request $request)
+    {
+        $request->validate([
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['exists:bank_mutations,id'],
+        ]);
+
+        $service = app(BankMutationService::class);
+        $count = 0;
+
+        foreach ($request->ids as $id) {
+            $mutation = BankMutation::find($id);
+            if ($mutation && $mutation->status === 'pending') {
+                try {
+                    $service->draftJournalEntry($mutation, auth()->id());
+                    $count++;
+                } catch (\Exception $e) {
+                    // continue with next
+                }
+            }
         }
 
-        return back()->with('success', 'Draft Jurnal berhasil dibuat dari Mutasi Bank.');
+        return back()->with('success', "Berhasil membuat {$count} draft jurnal dari mutasi bank terpilih.");
+    }
+
+    public function bulkMatchApi(Request $request)
+    {
+        $request->validate([
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['exists:bank_mutations,id'],
+        ]);
+
+        $service = app(BankMutationService::class);
+        $count = 0;
+
+        foreach ($request->ids as $id) {
+            $mutation = BankMutation::find($id);
+            if ($mutation && $mutation->status === 'pending') {
+                $service->matchWithApi($mutation, auth()->id());
+                $count++;
+            }
+        }
+
+        return back()->with('success', "Berhasil mencocokkan {$count} mutasi bank terpilih (Match API).");
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['exists:bank_mutations,id'],
+        ]);
+
+        $count = 0;
+        foreach ($request->ids as $id) {
+            $mutation = BankMutation::find($id);
+            if ($mutation && $mutation->status !== 'posted') {
+                $mutation->delete();
+                $count++;
+            }
+        }
+
+        return back()->with('success', "Berhasil menghapus {$count} data mutasi bank.");
     }
 }

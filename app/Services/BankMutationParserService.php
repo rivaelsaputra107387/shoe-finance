@@ -71,7 +71,7 @@ class BankMutationParserService
 
         // 3. Process data rows after header
         for ($i = $headerRowIndex + 1; $i < count($lines); $i++) {
-            $row = str_getcsv($lines[$i], $delimiter);
+            $row = str_getcsv($lines[$i], $delimiter, '"', '\\');
 
             // Skip completely empty rows
             if (empty(array_filter($row))) {
@@ -140,7 +140,7 @@ class BankMutationParserService
     protected function findHeaderRow(array $lines, string $delimiter): ?array
     {
         foreach ($lines as $index => $line) {
-            $row = str_getcsv($line, $delimiter);
+            $row = str_getcsv($line, $delimiter, '"', '\\');
             $normalizedRow = array_map(fn ($item) => strtolower(trim($item)), $row);
 
             $dateCol   = null;
@@ -221,7 +221,7 @@ class BankMutationParserService
      */
     protected function parseAmountAndType(array $row, array $colMap): ?array
     {
-        // 1. Separate Credit & Debit columns (Mandiri style)
+        // 1. Separate Credit & Debit columns (Mandiri style statement)
         if (isset($colMap['kredit']) || isset($colMap['debit'])) {
             $kreditStr = isset($colMap['kredit']) && isset($row[$colMap['kredit']]) ? $row[$colMap['kredit']] : '0';
             $debitStr  = isset($colMap['debit']) && isset($row[$colMap['debit']])   ? $row[$colMap['debit']]  : '0';
@@ -229,10 +229,11 @@ class BankMutationParserService
             $kreditVal = $this->cleanNumber($kreditStr);
             $debitVal  = $this->cleanNumber($debitStr);
 
-            if ($kreditVal > 0) {
-                return ['amount' => $kreditVal, 'type' => 'IN', 'format' => 'SEPARATE'];
-            } elseif ($debitVal > 0) {
-                return ['amount' => $debitVal, 'type' => 'OUT', 'format' => 'SEPARATE'];
+            // Pada mutasi Mandiri: Kolom Debit = Uang Masuk (Saldo bertambah), Kolom Kredit = Uang Keluar (Saldo berkurang)
+            if ($debitVal > 0) {
+                return ['amount' => $debitVal, 'type' => 'IN', 'format' => 'SEPARATE'];
+            } elseif ($kreditVal > 0) {
+                return ['amount' => $kreditVal, 'type' => 'OUT', 'format' => 'SEPARATE'];
             }
         }
 

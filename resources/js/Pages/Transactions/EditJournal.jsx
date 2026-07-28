@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import AccountSelect from '@/Components/AccountSelect';
-import { Plus, Trash2, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, CheckCircle2, AlertCircle, Save, Send } from 'lucide-react';
 
-export default function CreateJournal({ periods, accounts }) {
-    const { data, setData, post, processing, errors } = useForm({
-        fiscal_period_id: periods?.[0]?.id || '',
-        entry_date: new Date().toISOString().split('T')[0],
-        description: '',
-        reference: '',
-        lines: [
-            { account_id: '', debit: 0, credit: 0, memo: '' },
-            { account_id: '', debit: 0, credit: 0, memo: '' },
+export default function EditJournal({ entry, periods, accounts }) {
+    const { data, setData, put, post, processing, errors } = useForm({
+        fiscal_period_id: entry.fiscal_period_id || periods?.[0]?.id || '',
+        entry_date: entry.entry_date ? entry.entry_date.substring(0, 10) : new Date().toISOString().split('T')[0],
+        description: entry.description || '',
+        reference: entry.reference || '',
+        lines: entry.lines?.length > 0 ? entry.lines.map(line => ({
+            account_id: line.account_id || '',
+            debit: parseFloat(line.debit) || 0,
+            credit: parseFloat(line.credit) || 0,
+            description: line.description || line.memo || '',
+        })) : [
+            { account_id: '', debit: 0, credit: 0, description: '' },
+            { account_id: '', debit: 0, credit: 0, description: '' },
         ],
     });
 
@@ -41,7 +46,15 @@ export default function CreateJournal({ periods, accounts }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/app/journal-entries');
+        put(`/app/journal-entries/${entry.id}`);
+    };
+
+    const handleSubmitAndApprove = () => {
+        put(`/app/journal-entries/${entry.id}`, {
+            onSuccess: () => {
+                post(`/app/journal-entries/${entry.id}/submit`);
+            },
+        });
     };
 
     const formatRupiah = (val) => {
@@ -49,18 +62,22 @@ export default function CreateJournal({ periods, accounts }) {
     };
 
     return (
-        <AppLayout title="Input Jurnal Baru">
-            <Head title="Input Jurnal Baru - SIA Shoe Workshop" />
+        <AppLayout title="Edit Jurnal">
+            <Head title="Edit Jurnal - SIA Shoe Workshop" />
 
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <Link
-                        href="/app/journal-entries"
+                        href={entry.status === 'draft' ? '/app/draft-journals' : '/app/journal-entries'}
                         className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span>Kembali ke Daftar Jurnal</span>
+                        <span>Kembali ke {entry.status === 'draft' ? 'Draft Jurnal' : 'Daftar Jurnal'}</span>
                     </Link>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 font-mono">Ref: {entry.reference}</span>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -102,14 +119,14 @@ export default function CreateJournal({ periods, accounts }) {
 
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                                    No. Referensi (Opsional)
+                                    No. Referensi
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Auto-generate jika kosong"
+                                    placeholder="No. Referensi"
                                     value={data.reference}
                                     onChange={(e) => setData('reference', e.target.value)}
-                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
                         </div>
@@ -120,7 +137,7 @@ export default function CreateJournal({ periods, accounts }) {
                             </label>
                             <input
                                 type="text"
-                                placeholder="Contoh: Pembayaran Gaji Karyawan Bulan Juni"
+                                placeholder="Deskripsi Keterangan Transaksi"
                                 value={data.description}
                                 onChange={(e) => setData('description', e.target.value)}
                                 required
@@ -219,9 +236,9 @@ export default function CreateJournal({ periods, accounts }) {
                     </div>
 
                     {/* Submit Bar */}
-                    <div className="flex items-center justify-end gap-4">
+                    <div className="flex items-center justify-end gap-3">
                         <Link
-                            href="/app/journal-entries"
+                            href={entry.status === 'draft' ? '/app/draft-journals' : '/app/journal-entries'}
                             className="px-4 py-2.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:hover:text-white"
                         >
                             Batal
@@ -229,9 +246,10 @@ export default function CreateJournal({ periods, accounts }) {
                         <button
                             type="submit"
                             disabled={processing || !isBalanced}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all"
+                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center gap-2"
                         >
-                            {processing ? 'Menyimpan...' : 'Simpan Jurnal'}
+                            <Save className="w-4 h-4" />
+                            <span>{processing ? 'Menyimpan...' : 'Simpan Jurnal'}</span>
                         </button>
                     </div>
                 </form>

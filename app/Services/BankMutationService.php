@@ -58,7 +58,7 @@ class BankMutationService
     /**
      * Generates a draft journal entry using the Suspense Account.
      */
-    public function draftJournalEntry(BankMutation $mutation, int $userId): void
+    public function draftJournalEntry(BankMutation $mutation, int $userId): JournalEntry
     {
         DB::beginTransaction();
         try {
@@ -135,6 +135,8 @@ class BankMutationService
             ]);
 
             DB::commit();
+
+            return $journalEntry;
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;

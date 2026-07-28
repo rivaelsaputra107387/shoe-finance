@@ -53,6 +53,64 @@ class MasterController extends Controller
         return back()->with('success', 'Akun COA berhasil dibuat.');
     }
 
+    public function updateAccount(Request $request, Account $account)
+    {
+        $request->validate([
+            'code'               => ['required', 'string', 'unique:accounts,code,' . $account->id],
+            'name'               => ['required', 'string', 'max:255'],
+            'type'               => ['required', 'string'],
+            'normal_balance'     => ['required', 'string', 'in:Debet,Kredit'],
+            'report_category'    => ['required', 'string', 'in:Neraca,Laba Rugi'],
+            'cash_flow_category' => ['nullable', 'string'],
+            'parent_id'          => ['nullable', 'exists:accounts,id'],
+        ]);
+
+        $account->update($request->all());
+
+        return back()->with('success', 'Akun COA berhasil diperbarui.');
+    }
+
+    public function deleteAccount(Account $account)
+    {
+        if ($account->journalLines()->count() > 0) {
+            return back()->with('error', 'Akun ini tidak dapat dihapus karena sudah memiliki transaksi jurnal.');
+        }
+
+        $account->delete();
+
+        return back()->with('success', 'Akun COA berhasil dihapus.');
+    }
+
+    public function bulkDeleteAccounts(Request $request)
+    {
+        $request->validate([
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['exists:accounts,id'],
+        ]);
+
+        $count = 0;
+        $failedCount = 0;
+
+        foreach ($request->ids as $id) {
+            $account = Account::find($id);
+            if ($account) {
+                if ($account->journalLines()->count() > 0) {
+                    $failedCount++;
+                    continue;
+                }
+                $account->delete();
+                $count++;
+            }
+        }
+
+        $msg = "Berhasil menghapus {$count} akun COA.";
+        if ($failedCount > 0) {
+            $msg .= " ({$failedCount} akun dilewati karena sudah memiliki transaksi).";
+        }
+
+        return back()->with('success', $msg);
+    }
+
     public function fiscalPeriods(): Response
     {
         $periods = FiscalPeriod::orderByDesc('start_date')->get();
@@ -78,5 +136,24 @@ class MasterController extends Controller
         ]);
 
         return back()->with('success', 'Periode Akuntansi berhasil dibuat.');
+    }
+
+    public function updateFiscalPeriod(Request $request, FiscalPeriod $fiscalPeriod)
+    {
+        $request->validate([
+            'name'       => ['required', 'string', 'max:255'],
+            'start_date' => ['required', 'date'],
+            'end_date'   => ['required', 'date', 'after_or_equal:start_date'],
+            'status'     => ['required', 'in:open,closed'],
+        ]);
+
+        $fiscalPeriod->update([
+            'name'       => $request->name,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date,
+            'status'     => $request->status,
+        ]);
+
+        return back()->with('success', 'Periode Akuntansi berhasil diperbarui.');
     }
 }
