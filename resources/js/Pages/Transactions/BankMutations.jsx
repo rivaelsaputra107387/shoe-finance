@@ -279,18 +279,18 @@ export default function BankMutations({ mutations, filters }) {
     const allSelected = mutations?.data?.length > 0 && selectedIds.length === mutations.data.length;
 
     return (
-        <AppLayout title="Mutasi Bank">
-            <Head title="Mutasi Bank - SIA Shoe Workshop" />
+        <AppLayout title="Transaksi">
+            <Head title="Transaksi - SIA Shoe Workshop" />
 
             <div className="space-y-6">
                 {/* Top Action Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-                            Mutasi Bank (BCA & Mandiri)
+                            Transaksi
                         </h2>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Kelola data mutasi rekening bank dan buat draft jurnal otomatis.
+                            Kelola data transaksi bank/kas dan buat draft jurnal otomatis.
                         </p>
                     </div>
 
@@ -576,7 +576,7 @@ export default function BankMutations({ mutations, filters }) {
                                 ) : (
                                     <tr>
                                         <td colSpan="8" className="py-8 text-center text-gray-500 text-xs">
-                                            Tidak ada data mutasi bank ditemukan.
+                                            Tidak ada data transaksi ditemukan.
                                         </td>
                                     </tr>
                                 )}

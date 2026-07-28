@@ -28,3 +28,10 @@
 [wire\:loading] {
     transition-delay: 800ms !important;
 }
+
+/* Pastikan semua tombol memiliki kursor tangan (pointer) saat di-hover */
+button, 
+[role="button"],
+a {
+    cursor: pointer;
+}
