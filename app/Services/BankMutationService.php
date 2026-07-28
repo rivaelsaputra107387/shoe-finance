@@ -22,13 +22,21 @@ class BankMutationService
         $code = match (strtoupper($bankSource)) {
             'BCA' => '1120',
             'MANDIRI' => '1121',
+            'CASH', 'KAS' => '1110',
             default => null,
         };
         
-        if (!$code) return null;
+        if ($code) {
+            $account = Account::where('code', $code)->first();
+            if ($account) return $account->id;
+        }
 
-        $account = Account::where('code', $code)->first();
-        return $account?->id;
+        // Fallback search by account name if not in strict mapping
+        $fallbackAccount = Account::where('name', 'LIKE', '%' . $bankSource . '%')
+            ->where('code', 'LIKE', '11%')
+            ->first();
+
+        return $fallbackAccount?->id;
     }
 
     /**
