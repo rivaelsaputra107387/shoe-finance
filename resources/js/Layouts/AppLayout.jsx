@@ -151,7 +151,13 @@ export default function AppLayout({ children, title }) {
                                 </h3>
                                 <div className="space-y-1">
                                     {group.items.map((item) => {
-                                        const isActive = currentUrl.startsWith(item.href);
+                                        let isActive = currentUrl.startsWith(item.href);
+                                        
+                                        if (currentUrl.includes('/edit') && usePage().props?.entry?.status === 'draft') {
+                                            if (item.name === 'Draft Jurnal') isActive = true;
+                                            if (item.name === 'Daftar Jurnal') isActive = false;
+                                        }
+
                                         const Icon = item.icon;
                                         return (
                                             <Link
