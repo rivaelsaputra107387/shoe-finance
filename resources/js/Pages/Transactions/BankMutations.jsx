@@ -127,7 +127,7 @@ export default function BankMutations({ mutations, filters }) {
     const handleEditOpen = (item) => {
         setEditItem(item);
         editForm.setData({
-            date: item.date,
+            date: item.date ? String(item.date).substring(0, 10) : '',
             bank_source: item.bank_source,
             mutation_type: item.mutation_type,
             amount: item.amount,
