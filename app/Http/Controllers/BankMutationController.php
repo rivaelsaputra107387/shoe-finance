@@ -78,6 +78,7 @@ class BankMutationController extends Controller
                 'bank_source'   => $item['bank_source'],
                 'mutation_type' => $item['mutation_type'],
                 'status'        => 'pending',
+                'source_type'   => 'excel',
                 'uploaded_by'   => auth()->id(),
             ]);
             $count++;
@@ -86,6 +87,51 @@ class BankMutationController extends Controller
         Storage::disk('public')->delete($path);
 
         return back()->with('success', "Berhasil mengimpor {$count} data mutasi bank.");
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'date'          => ['required', 'date'],
+            'bank_source'   => ['required', 'string'],
+            'mutation_type' => ['required', 'in:IN,OUT'],
+            'amount'        => ['required', 'numeric', 'min:0'],
+            'description'   => ['required', 'string'],
+        ]);
+
+        $validated['bank_source'] = strtoupper($validated['bank_source']);
+        $validated['status'] = 'pending';
+        $validated['source_type'] = 'manual';
+        $validated['uploaded_by'] = auth()->id();
+
+        BankMutation::create($validated);
+
+        return back()->with('success', 'Berhasil menambahkan transaksi/mutasi manual.');
+    }
+
+    public function update(Request $request, BankMutation $bankMutation)
+    {
+        if ($bankMutation->source_type !== 'manual') {
+            return back()->with('error', 'Hanya mutasi manual yang dapat diedit.');
+        }
+        
+        if ($bankMutation->status !== 'pending') {
+            return back()->with('error', 'Mutasi yang sudah diproses tidak dapat diedit.');
+        }
+
+        $validated = $request->validate([
+            'date'          => ['required', 'date'],
+            'bank_source'   => ['required', 'string'],
+            'mutation_type' => ['required', 'in:IN,OUT'],
+            'amount'        => ['required', 'numeric', 'min:0'],
+            'description'   => ['required', 'string'],
+        ]);
+
+        $validated['bank_source'] = strtoupper($validated['bank_source']);
+
+        $bankMutation->update($validated);
+
+        return back()->with('success', 'Berhasil memperbarui transaksi/mutasi manual.');
     }
 
     public function generateDraft(BankMutation $bankMutation)

@@ -44,6 +44,8 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/journal-entries/bulk-delete', [JournalEntryController::class, 'bulkDelete'])->name('journal-entries.bulk-delete');
 
     Route::get('/bank-mutations', [BankMutationController::class, 'index'])->name('bank-mutations.index');
+    Route::post('/bank-mutations', [BankMutationController::class, 'store'])->name('bank-mutations.store');
+    Route::put('/bank-mutations/{bankMutation}', [BankMutationController::class, 'update'])->name('bank-mutations.update');
     Route::post('/bank-mutations/import', [BankMutationController::class, 'import'])->name('bank-mutations.import');
     Route::post('/bank-mutations/{bankMutation}/generate-draft', [BankMutationController::class, 'generateDraft'])->name('bank-mutations.generate-draft');
     Route::post('/bank-mutations/{bankMutation}/match-api', [BankMutationController::class, 'matchApi'])->name('bank-mutations.match-api');

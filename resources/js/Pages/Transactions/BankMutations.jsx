@@ -4,10 +4,13 @@ import AppLayout from '@/Layouts/AppLayout';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
-import { Upload, Sparkles, Search, ArrowUpRight, ArrowDownLeft, X, Trash2, Filter, RotateCcw, Calendar, ChevronDown } from 'lucide-react';
+import { Upload, Sparkles, Search, ArrowUpRight, ArrowDownLeft, X, Trash2, Filter, RotateCcw, Calendar, ChevronDown, Plus, Pencil } from 'lucide-react';
 
 export default function BankMutations({ mutations, filters }) {
     const [importModalOpen, setImportModalOpen] = useState(false);
+    const [addModalOpen, setAddModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editItem, setEditItem] = useState(null);
     const [search, setSearch] = useState(filters?.search || '');
     const [bankSource, setBankSource] = useState(filters?.bank_source || '');
     const [mutationType, setMutationType] = useState(filters?.mutation_type || '');
@@ -29,6 +32,22 @@ export default function BankMutations({ mutations, filters }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         file: null,
         bank_source: 'AUTO',
+    });
+
+    const addForm = useForm({
+        date: '',
+        bank_source: '',
+        mutation_type: 'IN',
+        amount: '',
+        description: '',
+    });
+
+    const editForm = useForm({
+        date: '',
+        bank_source: '',
+        mutation_type: 'IN',
+        amount: '',
+        description: '',
     });
 
     // Preset helper calculation
@@ -91,6 +110,39 @@ export default function BankMutations({ mutations, filters }) {
             onSuccess: () => {
                 setImportModalOpen(false);
                 reset();
+            },
+        });
+    };
+
+    const handleAddSubmit = (e) => {
+        e.preventDefault();
+        addForm.post('/app/bank-mutations', {
+            onSuccess: () => {
+                setAddModalOpen(false);
+                addForm.reset();
+            },
+        });
+    };
+
+    const handleEditOpen = (item) => {
+        setEditItem(item);
+        editForm.setData({
+            date: item.date,
+            bank_source: item.bank_source,
+            mutation_type: item.mutation_type,
+            amount: item.amount,
+            description: item.description,
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleEditSubmit = (e) => {
+        e.preventDefault();
+        editForm.put(`/app/bank-mutations/${editItem.id}`, {
+            onSuccess: () => {
+                setEditModalOpen(false);
+                setEditItem(null);
+                editForm.reset();
             },
         });
     };
@@ -231,13 +283,22 @@ export default function BankMutations({ mutations, filters }) {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setImportModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
-                    >
-                        <Upload className="w-4 h-4" />
-                        <span>Import CSV (BCA/Mandiri)</span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                        <button
+                            onClick={() => setAddModalOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-semibold rounded-xl shadow-sm transition-all"
+                        >
+                            <Plus className="w-4 h-4 text-emerald-600" />
+                            <span>Input Manual</span>
+                        </button>
+                        <button
+                            onClick={() => setImportModalOpen(true)}
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+                        >
+                            <Upload className="w-4 h-4" />
+                            <span>Import CSV (BCA/Mandiri)</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Bulk Action Bar if Selected */}
@@ -434,9 +495,18 @@ export default function BankMutations({ mutations, filters }) {
                                                     {formatDate(item.date)}
                                                 </td>
                                                 <td className="py-2.5 px-2.5 whitespace-nowrap">
-                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                                        {item.bank_source}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 w-max">
+                                                            {item.bank_source}
+                                                        </span>
+                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold w-max ${
+                                                            item.source_type === 'manual' 
+                                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' 
+                                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+                                                        }`}>
+                                                            {item.source_type === 'manual' ? 'MANUAL' : 'EXCEL'}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="py-2.5 px-2.5 text-gray-800 dark:text-gray-200 font-medium max-w-[260px] truncate" title={item.description}>
                                                     {item.description}
@@ -462,6 +532,15 @@ export default function BankMutations({ mutations, filters }) {
                                                 <td className="py-4 px-4 whitespace-nowrap text-right space-x-2">
                                                     {item.status === 'pending' && (
                                                         <>
+                                                            {item.source_type === 'manual' && (
+                                                                <button
+                                                                    onClick={() => handleEditOpen(item)}
+                                                                    className="px-2.5 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
+                                                                >
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                    <span>Edit</span>
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 disabled={true}
                                                                 className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
@@ -558,6 +637,268 @@ export default function BankMutations({ mutations, filters }) {
                                     className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md disabled:opacity-50"
                                 >
                                     {processing ? 'Memproses...' : 'Mulai Import'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Manual Modal */}
+            {addModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Input Mutasi Manual</h3>
+                            <button
+                                onClick={() => {
+                                    setAddModalOpen(false);
+                                    addForm.reset();
+                                }}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddSubmit} className="p-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Tanggal Transaksi
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={addForm.data.date}
+                                        onChange={e => addForm.setData('date', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
+                                    />
+                                    {addForm.errors.date && <p className="mt-1 text-xs text-rose-500">{addForm.errors.date}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Sumber (Bank/Cash)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Contoh: BCA, MANDIRI, CASH"
+                                        value={addForm.data.bank_source}
+                                        onChange={e => addForm.setData('bank_source', e.target.value.toUpperCase())}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors uppercase"
+                                    />
+                                    {addForm.errors.bank_source && <p className="mt-1 text-xs text-rose-500">{addForm.errors.bank_source}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Tipe Mutasi
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="mutation_type" 
+                                                value="IN"
+                                                checked={addForm.data.mutation_type === 'IN'}
+                                                onChange={() => addForm.setData('mutation_type', 'IN')}
+                                                className="text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uang Masuk (IN)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="mutation_type" 
+                                                value="OUT"
+                                                checked={addForm.data.mutation_type === 'OUT'}
+                                                onChange={() => addForm.setData('mutation_type', 'OUT')}
+                                                className="text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uang Keluar (OUT)</span>
+                                        </label>
+                                    </div>
+                                    {addForm.errors.mutation_type && <p className="mt-1 text-xs text-rose-500">{addForm.errors.mutation_type}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Nominal (Rp)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0"
+                                        value={addForm.data.amount}
+                                        onChange={e => addForm.setData('amount', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
+                                    />
+                                    {addForm.errors.amount && <p className="mt-1 text-xs text-rose-500">{addForm.errors.amount}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Keterangan
+                                    </label>
+                                    <textarea
+                                        required
+                                        rows={3}
+                                        placeholder="Keterangan transaksi..."
+                                        value={addForm.data.description}
+                                        onChange={e => addForm.setData('description', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors resize-none"
+                                    ></textarea>
+                                    {addForm.errors.description && <p className="mt-1 text-xs text-rose-500">{addForm.errors.description}</p>}
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAddModalOpen(false);
+                                        addForm.reset();
+                                    }}
+                                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={addForm.processing}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {addForm.processing ? 'Menyimpan...' : 'Simpan Transaksi'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Manual Modal */}
+            {editModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit Mutasi Manual</h3>
+                            <button
+                                onClick={() => {
+                                    setEditModalOpen(false);
+                                    setEditItem(null);
+                                    editForm.reset();
+                                }}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleEditSubmit} className="p-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Tanggal Transaksi
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={editForm.data.date}
+                                        onChange={e => editForm.setData('date', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
+                                    />
+                                    {editForm.errors.date && <p className="mt-1 text-xs text-rose-500">{editForm.errors.date}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Sumber (Bank/Cash)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Contoh: BCA, MANDIRI, CASH"
+                                        value={editForm.data.bank_source}
+                                        onChange={e => editForm.setData('bank_source', e.target.value.toUpperCase())}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors uppercase"
+                                    />
+                                    {editForm.errors.bank_source && <p className="mt-1 text-xs text-rose-500">{editForm.errors.bank_source}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Tipe Mutasi
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="mutation_type" 
+                                                value="IN"
+                                                checked={editForm.data.mutation_type === 'IN'}
+                                                onChange={() => editForm.setData('mutation_type', 'IN')}
+                                                className="text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uang Masuk (IN)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="mutation_type" 
+                                                value="OUT"
+                                                checked={editForm.data.mutation_type === 'OUT'}
+                                                onChange={() => editForm.setData('mutation_type', 'OUT')}
+                                                className="text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uang Keluar (OUT)</span>
+                                        </label>
+                                    </div>
+                                    {editForm.errors.mutation_type && <p className="mt-1 text-xs text-rose-500">{editForm.errors.mutation_type}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Nominal (Rp)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0"
+                                        value={editForm.data.amount}
+                                        onChange={e => editForm.setData('amount', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
+                                    />
+                                    {editForm.errors.amount && <p className="mt-1 text-xs text-rose-500">{editForm.errors.amount}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Keterangan
+                                    </label>
+                                    <textarea
+                                        required
+                                        rows={3}
+                                        placeholder="Keterangan transaksi..."
+                                        value={editForm.data.description}
+                                        onChange={e => editForm.setData('description', e.target.value)}
+                                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors resize-none"
+                                    ></textarea>
+                                    {editForm.errors.description && <p className="mt-1 text-xs text-rose-500">{editForm.errors.description}</p>}
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setEditModalOpen(false);
+                                        setEditItem(null);
+                                        editForm.reset();
+                                    }}
+                                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-xl transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editForm.processing}
+                                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {editForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                                 </button>
                             </div>
                         </form>

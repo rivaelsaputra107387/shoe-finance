@@ -16,6 +16,7 @@ class BankMutation extends Model
         'description',
         'amount',
         'bank_source',
+        'source_type',
         'mutation_type',
         'matched_invoice_ref',
         'matched_invoice_data',

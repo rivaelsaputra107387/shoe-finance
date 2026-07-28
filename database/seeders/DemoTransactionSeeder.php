@@ -189,6 +189,9 @@ class DemoTransactionSeeder extends Seeder
                     'description' => $txData['desc'],
                     'fiscal_period_id' => $period->id,
                     'created_by' => $creator->id,
+                    'status' => 'posted',
+                    'posted_by' => $creator->id,
+                    'posted_at' => now(),
                     'is_closing' => false,
                 ]);
 
