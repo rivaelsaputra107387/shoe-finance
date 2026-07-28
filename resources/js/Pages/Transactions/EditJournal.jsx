@@ -44,6 +44,17 @@ export default function EditJournal({ entry, periods, accounts }) {
     const totalCredit = data.lines.reduce((sum, item) => sum + (parseFloat(item.credit) || 0), 0);
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
 
+    const formatNumberInput = (val) => {
+        if (!val && val !== 0) return '';
+        const cleanVal = val.toString().replace(/\D/g, '');
+        return cleanVal ? new Intl.NumberFormat('id-ID').format(cleanVal) : '';
+    };
+
+    const parseNumberInput = (val) => {
+        const cleanVal = val.toString().replace(/\D/g, '');
+        return cleanVal ? parseInt(cleanVal, 10) : 0;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         put(`/app/journal-entries/${entry.id}`);
@@ -179,20 +190,22 @@ export default function EditJournal({ entry, periods, accounts }) {
 
                                         <div className="w-full md:w-40">
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="numeric"
                                                 placeholder="Debit (Rp)"
-                                                value={line.debit || ''}
-                                                onChange={(e) => handleLineChange(idx, 'debit', parseFloat(e.target.value) || 0)}
+                                                value={formatNumberInput(line.debit)}
+                                                onChange={(e) => handleLineChange(idx, 'debit', parseNumberInput(e.target.value))}
                                                 className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white"
                                             />
                                         </div>
 
                                         <div className="w-full md:w-40">
                                             <input
-                                                type="number"
+                                                type="text"
+                                                inputMode="numeric"
                                                 placeholder="Kredit (Rp)"
-                                                value={line.credit || ''}
-                                                onChange={(e) => handleLineChange(idx, 'credit', parseFloat(e.target.value) || 0)}
+                                                value={formatNumberInput(line.credit)}
+                                                onChange={(e) => handleLineChange(idx, 'credit', parseNumberInput(e.target.value))}
                                                 className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white"
                                             />
                                         </div>

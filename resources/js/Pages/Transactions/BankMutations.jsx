@@ -264,6 +264,17 @@ export default function BankMutations({ mutations, filters }) {
         }
     };
 
+    const formatNumberInput = (val) => {
+        if (!val && val !== 0) return '';
+        const cleanVal = val.toString().replace(/\D/g, '');
+        return cleanVal ? new Intl.NumberFormat('id-ID').format(cleanVal) : '';
+    };
+
+    const parseNumberInput = (val) => {
+        const cleanVal = val.toString().replace(/\D/g, '');
+        return cleanVal ? parseInt(cleanVal, 10) : 0;
+    };
+
     const hasActiveFilters = search || bankSource || mutationType || status || (datePreset !== 'all');
     const allSelected = mutations?.data?.length > 0 && selectedIds.length === mutations.data.length;
 
@@ -724,13 +735,12 @@ export default function BankMutations({ mutations, filters }) {
                                         Nominal (Rp)
                                     </label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
                                         required
-                                        min="0"
-                                        step="0.01"
                                         placeholder="0"
-                                        value={addForm.data.amount}
-                                        onChange={e => addForm.setData('amount', e.target.value)}
+                                        value={formatNumberInput(addForm.data.amount)}
+                                        onChange={e => addForm.setData('amount', parseNumberInput(e.target.value))}
                                         className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
                                     />
                                     {addForm.errors.amount && <p className="mt-1 text-xs text-rose-500">{addForm.errors.amount}</p>}
@@ -855,13 +865,12 @@ export default function BankMutations({ mutations, filters }) {
                                         Nominal (Rp)
                                     </label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
                                         required
-                                        min="0"
-                                        step="0.01"
                                         placeholder="0"
-                                        value={editForm.data.amount}
-                                        onChange={e => editForm.setData('amount', e.target.value)}
+                                        value={formatNumberInput(editForm.data.amount)}
+                                        onChange={e => editForm.setData('amount', parseNumberInput(e.target.value))}
                                         className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm px-3 py-2.5 transition-colors"
                                     />
                                     {editForm.errors.amount && <p className="mt-1 text-xs text-rose-500">{editForm.errors.amount}</p>}
