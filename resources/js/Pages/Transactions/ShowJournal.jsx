@@ -24,6 +24,9 @@ export default function ShowJournal({ auth, entry }) {
         }
     };
 
+    const totalDebit = entry.lines?.reduce((sum, line) => sum + Number(line.debit), 0) || 0;
+    const totalCredit = entry.lines?.reduce((sum, line) => sum + Number(line.credit), 0) || 0;
+
     return (
         <AppLayout
             user={auth.user}
@@ -131,10 +134,10 @@ export default function ShowJournal({ auth, entry }) {
                                         TOTAL
                                     </td>
                                     <td className="py-4 px-6 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                        {formatRupiah(entry.total_debit)}
+                                        {formatRupiah(totalDebit)}
                                     </td>
                                     <td className="py-4 px-6 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
-                                        {formatRupiah(entry.total_credit)}
+                                        {formatRupiah(totalCredit)}
                                     </td>
                                 </tr>
                             </tfoot>
