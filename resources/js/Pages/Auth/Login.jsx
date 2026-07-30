@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm, Head, Link } from '@inertiajs/react';
 import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import LoginBear from '@/Components/LoginBear';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -10,6 +11,23 @@ export default function Login() {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+    const [bearPasswordInteracted, setBearPasswordInteracted] = useState(false);
+
+    const togglePassword = () => {
+        setBearPasswordInteracted(true);
+        setShowPassword(prev => !prev);
+    };
+
+    // Bear ref & throttled wiggle on typing
+    const bearRef         = useRef(null);
+    const lastWiggleRef   = useRef(0);
+    const triggerWiggle   = () => {
+        const now = Date.now();
+        if (now - lastWiggleRef.current > 450) {
+            lastWiggleRef.current = now;
+            bearRef.current?.wiggle();
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -101,8 +119,11 @@ export default function Login() {
                 <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-white">
                     <div className="w-full max-w-md space-y-8">
                         <div>
-                            <div className="lg:hidden mb-8">
-                                <img src="/logo.png" alt="Shoe Workshop Logo" className="h-12 w-auto object-contain" />
+                            <div className="flex justify-center mb-6">
+                                <LoginBear
+                                    ref={bearRef}
+                                    isCovering={bearPasswordInteracted && !showPassword}
+                                />
                             </div>
                             <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
                                 Selamat datang kembali
@@ -125,7 +146,7 @@ export default function Login() {
                                         <input
                                             type="email"
                                             value={data.email}
-                                            onChange={(e) => setData('email', e.target.value)}
+                                            onChange={(e) => { setData('email', e.target.value); triggerWiggle(); }}
                                             required
                                             placeholder="email@shoeworkshop.com"
                                             className="w-full pl-11 pr-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
@@ -147,14 +168,14 @@ export default function Login() {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
+                                            onChange={(e) => { setData('password', e.target.value); triggerWiggle(); }}
                                             required
                                             placeholder="••••••••"
                                             className="w-full pl-11 pr-12 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
+                                            onClick={togglePassword}
                                             className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                                         >
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
