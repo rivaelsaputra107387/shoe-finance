@@ -183,6 +183,21 @@ export default function AppLayout({ children, title }) {
                         ))}
                     </nav>
 
+                    {/* Sidebar Footer */}
+                    <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800/70">
+                        <div className="flex items-center gap-2.5">
+                            <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain opacity-70 flex-shrink-0" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest truncate">
+                                    SIA Finance
+                                </span>
+                                <span className="text-[9px] text-gray-400 dark:text-gray-600 truncate">
+                                    © {new Date().getFullYear()} Shoe Workshop · v1.0
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                 </aside>
 
                 {/* Main Content Area */}
