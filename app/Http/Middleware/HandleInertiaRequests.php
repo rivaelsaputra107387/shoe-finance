@@ -37,6 +37,8 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
+                    'profile_photo_url' => $user->profile_photo_url,
                     'roles' => $user->getRoleNames()->toArray(),
                 ] : null,
             ],

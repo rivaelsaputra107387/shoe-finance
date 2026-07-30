@@ -66,7 +66,7 @@ export default function MonthYearPicker({ value, onChange, label = 'Bulan & Tahu
 
             {/* Custom Month & Year Picker Popover Card */}
             {isOpen && (
-                <div className="absolute right-0 lg:left-0 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl z-50 p-3 space-y-3 animate-in fade-in zoom-in-95">
+                <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl z-50 p-3 space-y-3 animate-in fade-in zoom-in-95">
                     {/* Header Year Controls */}
                     <div className="flex items-center justify-between px-1 pb-2 border-b border-gray-100 dark:border-gray-800">
                         <button

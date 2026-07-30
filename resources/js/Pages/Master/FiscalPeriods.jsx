@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import CustomSelect from '@/Components/CustomSelect';
 import { Plus, Calendar, CheckCircle2, Lock, X, Pencil } from 'lucide-react';
 
 export default function FiscalPeriods({ periods }) {
@@ -63,7 +64,7 @@ export default function FiscalPeriods({ periods }) {
 
                     <button
                         onClick={() => { reset(); setCreateModalOpen(true); }}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Tambah Periode Baru</span>
@@ -142,15 +143,15 @@ export default function FiscalPeriods({ periods }) {
                             {editingPeriod && (
                                 <div>
                                     <label className="block font-semibold mb-1">Status</label>
-                                    <select value={data.status} onChange={(e) => setData('status', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl">
+                                    <CustomSelect value={data.status} onChange={(e) => setData('status', e.target.value)} className="w-full">
                                         <option value="open">Open</option>
                                         <option value="closed">Closed</option>
-                                    </select>
+                                    </CustomSelect>
                                 </div>
                             )}
                             <div className="flex justify-end gap-3 pt-3">
                                 <button type="button" onClick={() => { setCreateModalOpen(false); setEditingPeriod(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
-                                <button type="submit" disabled={processing} className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl">
+                                <button type="submit" disabled={processing} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl">
                                     {editingPeriod ? 'Perbarui Periode' : 'Simpan Periode'}
                                 </button>
                             </div>

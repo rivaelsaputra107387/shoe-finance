@@ -7,6 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property \Illuminate\Support\Carbon $start_date
+ * @property \Illuminate\Support\Carbon $end_date
+ * @property string $status
+ * @property int|null $closed_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User|null $closedBy
+ * @property-read bool $is_open
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\JournalEntry> $journalEntries
+ * @property-read int|null $journal_entries_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod closed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod open()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereClosedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereEndDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereStartDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FiscalPeriod whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class FiscalPeriod extends Model
 {
     use HasFactory;

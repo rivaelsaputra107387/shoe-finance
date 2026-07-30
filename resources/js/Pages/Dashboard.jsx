@@ -17,6 +17,7 @@ import {
     BarChart3,
     Sparkles,
 } from 'lucide-react';
+import CustomSelect from '@/Components/CustomSelect';
 import {
     ResponsiveContainer,
     BarChart,
@@ -113,20 +114,20 @@ export default function Dashboard({
 
                         {/* Quick Action Buttons */}
                         <div className="flex flex-wrap items-center gap-3">
-                            <select
-                                className="px-4 py-2 bg-emerald-800/40 border border-emerald-500/30 text-white rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 backdrop-blur-sm cursor-pointer"
+                            <CustomSelect
+                                className="w-auto"
                                 value={selectedPeriodId || ''}
                                 onChange={(e) => {
                                     router.get('/app/dashboard', { period_id: e.target.value }, { preserveState: true });
                                 }}
                             >
-                                <option value="" className="text-gray-900">Periode Aktif (Default)</option>
+                                <option value="">Periode Aktif (Default)</option>
                                 {periods.map((p) => (
-                                    <option key={p.id} value={p.id} className="text-gray-900">
+                                    <option key={p.id} value={p.id}>
                                         {p.name} {p.status === 'open' ? '(Aktif)' : ''}
                                     </option>
                                 ))}
-                            </select>
+                            </CustomSelect>
 
                             <Link
                                 href="/app/journal-entries/create"

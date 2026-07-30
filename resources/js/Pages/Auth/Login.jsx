@@ -24,7 +24,7 @@ export default function Login() {
                 <div className="hidden lg:flex lg:w-1/2 bg-[#1a4a38] p-12 flex-col relative overflow-hidden">
                     {/* Top Left Logo */}
                     <div className="relative z-10 flex items-center gap-3">
-                        <img src="/logo.png" alt="Shoe Workshop Logo" className="h-8 w-auto object-contain bg-white/90 p-1 rounded" />
+                        <img src="/logo.png" alt="Shoe Workshop Logo" className="h-10 w-auto object-contain" />
                         <span className="text-lg font-bold tracking-tight text-white uppercase">
                             SHOEWORKSHOP
                         </span>
@@ -34,10 +34,7 @@ export default function Login() {
                     <div className="flex-1 flex items-center justify-center relative w-full h-full">
                         {/* Center Circle */}
                         <div className="absolute w-64 h-64 bg-[#143d2e] rounded-full flex flex-col items-center justify-center shadow-2xl z-10 border border-emerald-800/50">
-                            <img src="/logo.png" alt="Shoe Workshop Logo" className="h-10 w-auto object-contain bg-white/90 p-1.5 rounded-lg mb-2" />
-                            <span className="text-white font-bold text-sm tracking-widest uppercase text-center leading-tight">
-                                SHOE<br/>WORKSHOP
-                            </span>
+                            <img src="/logo.png" alt="Shoe Workshop Logo" className="h-20 w-auto object-contain" />
                         </div>
 
                         {/* Floating Card 1 */}
@@ -105,7 +102,7 @@ export default function Login() {
                     <div className="w-full max-w-md space-y-8">
                         <div>
                             <div className="lg:hidden mb-8">
-                                <img src="/logo.png" alt="Shoe Workshop Logo" className="h-10 w-auto object-contain bg-[#1a4a38] p-1.5 rounded-lg" />
+                                <img src="/logo.png" alt="Shoe Workshop Logo" className="h-12 w-auto object-contain" />
                             </div>
                             <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
                                 Selamat datang kembali

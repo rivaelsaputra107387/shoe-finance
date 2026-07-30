@@ -7,7 +7,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\PeriodClosingController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect Root to Application Dashboard or Login
@@ -25,6 +27,11 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profil (All Auth Users)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Transaksi
     Route::get('/journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
@@ -57,11 +64,22 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
 
     // Laporan Keuangan
     Route::get('/general-ledger', [ReportController::class, 'generalLedger'])->name('reports.general-ledger');
+    Route::get('/general-ledger/export', [ReportController::class, 'exportGeneralLedger'])->name('reports.general-ledger.export');
+
     Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
+    Route::get('/trial-balance/export', [ReportController::class, 'exportTrialBalance'])->name('reports.trial-balance.export');
+
     Route::get('/income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
+    Route::get('/income-statement/export', [ReportController::class, 'exportIncomeStatement'])->name('reports.income-statement.export');
+
     Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+    Route::get('/balance-sheet/export', [ReportController::class, 'exportBalanceSheet'])->name('reports.balance-sheet.export');
+
     Route::get('/equity-statement', [ReportController::class, 'equityStatement'])->name('reports.equity-statement');
+    Route::get('/equity-statement/export', [ReportController::class, 'exportEquityStatement'])->name('reports.equity-statement.export');
+
     Route::get('/cash-flow-statement', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
+    Route::get('/cash-flow-statement/export', [ReportController::class, 'exportCashFlow'])->name('reports.cash-flow.export');
 
     // Master Data & Pengaturan
     Route::get('/accounts', [MasterController::class, 'accounts'])->name('master.accounts');
@@ -78,4 +96,12 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/period-closing/execute', [PeriodClosingController::class, 'execute'])->name('period-closing.execute');
 
     Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('audit-trail.index');
+
+    // Manajemen Akun (Owner Only)
+    Route::middleware(['role:owner'])->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 });

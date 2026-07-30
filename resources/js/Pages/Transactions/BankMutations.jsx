@@ -6,6 +6,101 @@ import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
 import { Upload, Sparkles, Search, ArrowUpRight, ArrowDownLeft, X, Trash2, Filter, RotateCcw, Calendar, ChevronDown, Plus, Pencil } from 'lucide-react';
 
+function MobileBankMutationCard({ item, isSelected, toggleSelectOne, formatRupiah, formatDate, handleEditOpen, promptGenerateDraft }) {
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    return (
+        <div className={`transition-colors ${isSelected ? 'bg-emerald-50/40 dark:bg-emerald-950/30' : 'bg-white dark:bg-transparent'}`}>
+            <div 
+                className="p-3.5 flex items-start gap-3 cursor-pointer select-none"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectOne(item.id)}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer w-4 h-4"
+                    />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono font-bold text-gray-900 dark:text-white text-sm">{formatDate(item.date)}</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                {item.bank_source}
+                            </span>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            item.mutation_type === 'IN'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
+                        }`}>
+                            {item.mutation_type === 'IN' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                            <span>{item.mutation_type === 'IN' ? 'IN' : 'OUT'}</span>
+                        </span>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate pr-4 mb-2">
+                        {item.description}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-gray-900 dark:text-white text-sm">
+                                {formatRupiah(item.amount)}
+                            </span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                item.source_type === 'manual' 
+                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400' 
+                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+                            }`}>
+                                {item.source_type === 'manual' ? 'MANUAL' : 'EXCEL'}
+                            </span>
+                        </div>
+                        <div className={`p-1 rounded-full ${isOpen ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isOpen && (
+                <div className="px-3 pb-3 pt-2 border-t border-gray-100 dark:border-gray-800/60 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                    <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-500">Status</span>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300 capitalize">{item.status}</span>
+                    </div>
+
+                    {/* Aksi */}
+                    {item.status === 'pending' && (
+                        <div className="flex justify-end gap-2 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                            {item.source_type === 'manual' && (
+                                <button
+                                    onClick={() => handleEditOpen(item)}
+                                    className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-200 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span>Edit</span>
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => promptGenerateDraft(item)}
+                                className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-sm"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Generate Draft</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function BankMutations({ mutations, filters }) {
     const [importModalOpen, setImportModalOpen] = useState(false);
     const [addModalOpen, setAddModalOpen] = useState(false);
@@ -79,17 +174,37 @@ export default function BankMutations({ mutations, filters }) {
             setStartDate('');
             setEndDate('');
         }
+
+        if (preset !== 'custom') {
+            executeFilter(
+                search, 
+                bankSource, 
+                mutationType, 
+                status, 
+                preset, 
+                preset === 'all' ? '' : startDate, 
+                preset === 'all' ? '' : endDate
+            );
+        }
     };
 
-    const handleFilter = () => {
+    const executeFilter = (
+        newSearch = search,
+        newBankSource = bankSource,
+        newMutationType = mutationType,
+        newStatus = status,
+        newDatePreset = datePreset,
+        newStartDate = startDate,
+        newEndDate = endDate
+    ) => {
         router.get('/app/bank-mutations', {
-            search,
-            bank_source: bankSource,
-            mutation_type: mutationType,
-            status,
-            date_preset: datePreset,
-            start_date: datePreset === 'all' ? '' : startDate,
-            end_date: datePreset === 'all' ? '' : endDate,
+            search: newSearch,
+            bank_source: newBankSource,
+            mutation_type: newMutationType,
+            status: newStatus,
+            date_preset: newDatePreset,
+            start_date: newDatePreset === 'all' ? '' : newStartDate,
+            end_date: newDatePreset === 'all' ? '' : newEndDate,
         }, { preserveState: true, replace: true });
     };
 
@@ -295,17 +410,17 @@ export default function BankMutations({ mutations, filters }) {
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <div className="flex flex-row items-center justify-between gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                         <button
                             onClick={() => setAddModalOpen(true)}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-semibold rounded-xl shadow-sm transition-all"
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-[11px] sm:text-sm font-semibold rounded-xl shadow-sm transition-all"
                         >
                             <Plus className="w-4 h-4 text-emerald-600" />
                             <span>Input Manual</span>
                         </button>
                         <button
                             onClick={() => setImportModalOpen(true)}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
                         >
                             <Upload className="w-4 h-4" />
                             <span>Import CSV (BCA/Mandiri)</span>
@@ -368,7 +483,7 @@ export default function BankMutations({ mutations, filters }) {
                                 placeholder="Cari deskripsi mutasi / nama pengirim..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
+                                onKeyDown={(e) => e.key === 'Enter' && executeFilter(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                             />
                         </div>
@@ -378,7 +493,10 @@ export default function BankMutations({ mutations, filters }) {
                             {/* Bank Dropdown */}
                             <CustomSelect
                                 value={bankSource}
-                                onChange={(e) => setBankSource(e.target.value)}
+                                onChange={(e) => {
+                                    setBankSource(e.target.value);
+                                    executeFilter(search, e.target.value, mutationType, status, datePreset, startDate, endDate);
+                                }}
                             >
                                 <option value="">Semua Bank</option>
                                 <option value="BCA">BCA</option>
@@ -388,7 +506,10 @@ export default function BankMutations({ mutations, filters }) {
                             {/* Tipe Dropdown */}
                             <CustomSelect
                                 value={mutationType}
-                                onChange={(e) => setMutationType(e.target.value)}
+                                onChange={(e) => {
+                                    setMutationType(e.target.value);
+                                    executeFilter(search, bankSource, e.target.value, status, datePreset, startDate, endDate);
+                                }}
                             >
                                 <option value="">Semua Tipe</option>
                                 <option value="IN">Uang Masuk (IN)</option>
@@ -398,7 +519,10 @@ export default function BankMutations({ mutations, filters }) {
                             {/* Status Dropdown */}
                             <CustomSelect
                                 value={status}
-                                onChange={(e) => setStatus(e.target.value)}
+                                onChange={(e) => {
+                                    setStatus(e.target.value);
+                                    executeFilter(search, bankSource, mutationType, e.target.value, datePreset, startDate, endDate);
+                                }}
                             >
                                 <option value="">Semua Status</option>
                                 <option value="pending">Pending</option>
@@ -430,14 +554,22 @@ export default function BankMutations({ mutations, filters }) {
                                 <input
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => { setStartDate(e.target.value); setDatePreset('custom'); }}
+                                    onChange={(e) => { 
+                                        setStartDate(e.target.value); 
+                                        setDatePreset('custom'); 
+                                        executeFilter(search, bankSource, mutationType, status, 'custom', e.target.value, endDate);
+                                    }}
                                     className="py-1 px-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-900 dark:text-white"
                                 />
                                 <span>s/d</span>
                                 <input
                                     type="date"
                                     value={endDate}
-                                    onChange={(e) => { setEndDate(e.target.value); setDatePreset('custom'); }}
+                                    onChange={(e) => { 
+                                        setEndDate(e.target.value); 
+                                        setDatePreset('custom'); 
+                                        executeFilter(search, bankSource, mutationType, status, 'custom', startDate, e.target.value);
+                                    }}
                                     className="py-1 px-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-900 dark:text-white"
                                 />
                             </div>
@@ -445,8 +577,8 @@ export default function BankMutations({ mutations, filters }) {
                     )}
 
                     {/* Filter Actions */}
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                        {hasActiveFilters && (
+                    {hasActiveFilters && (
+                        <div className="flex items-center justify-end gap-2 pt-1">
                             <button
                                 onClick={handleReset}
                                 className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-rose-600 dark:hover:text-rose-400 inline-flex items-center gap-1 transition-colors"
@@ -454,21 +586,13 @@ export default function BankMutations({ mutations, filters }) {
                                 <RotateCcw className="w-3 h-3" />
                                 <span>Reset Filter</span>
                             </button>
-                        )}
-
-                        <button
-                            onClick={handleFilter}
-                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-sm shadow-emerald-600/20"
-                        >
-                            <Filter className="w-3.5 h-3.5" />
-                            <span>Terapkan Filter</span>
-                        </button>
-                    </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Table */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-gray-800/50">
@@ -583,6 +707,31 @@ export default function BankMutations({ mutations, filters }) {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile View: Accordion List */}
+                    <div className="md:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                        {mutations?.data?.length > 0 ? (
+                            mutations.data.map((item) => {
+                                const isSelected = selectedIds.includes(item.id);
+                                return (
+                                    <MobileBankMutationCard 
+                                        key={item.id}
+                                        item={item}
+                                        isSelected={isSelected}
+                                        toggleSelectOne={toggleSelectOne}
+                                        formatRupiah={formatRupiah}
+                                        formatDate={formatDate}
+                                        handleEditOpen={handleEditOpen}
+                                        promptGenerateDraft={promptGenerateDraft}
+                                    />
+                                );
+                            })
+                        ) : (
+                            <div className="py-8 text-center text-gray-500 text-xs">
+                                Tidak ada data transaksi ditemukan.
+                            </div>
+                        )}
                     </div>
                     {/* Pagination */}
                     <Pagination links={mutations?.links} meta={mutations} />

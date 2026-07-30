@@ -246,6 +246,8 @@ class JournalEntryController extends Controller
             'submitted_at' => now(),
         ]);
 
+        \App\Models\BankMutation::where('journal_entry_id', $journalEntry->id)->update(['status' => 'unapproved']);
+
         return back()->with('success', 'Jurnal berhasil di-submit untuk persetujuan.');
     }
 

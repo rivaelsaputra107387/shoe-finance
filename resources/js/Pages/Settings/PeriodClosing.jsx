@@ -81,7 +81,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                                 disabled={!activePeriod.can_close}
                                 className={`px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
                                     activePeriod.can_close
-                                        ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/20 transform hover:-translate-y-0.5 cursor-pointer'
+                                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 transform hover:-translate-y-0.5 cursor-pointer'
                                         : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                                 }`}
                             >
@@ -96,7 +96,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                             <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/50 space-y-2">
                                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                     <span>Jurnal Ter-Posting</span>
-                                    <FileText className="w-4 h-4 text-indigo-500" />
+                                    <FileText className="w-4 h-4 text-emerald-500" />
                                 </div>
                                 <div className="text-2xl font-bold text-gray-900 dark:text-white font-mono">
                                     {activePeriod.journal_count} <span className="text-xs font-normal text-gray-500">entri</span>
@@ -220,7 +220,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-xs animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-lg w-full p-6 md:p-8 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400">
+                            <div className="p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
                                 <Lock className="w-6 h-6" />
                             </div>
                             <div>
@@ -257,7 +257,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                             <button
                                 onClick={handleExecuteClosing}
                                 disabled={processing}
-                                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition-all flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2"
                             >
                                 {processing ? 'Memproses...' : 'Ya, Tutup Periode Sekarang'}
                             </button>

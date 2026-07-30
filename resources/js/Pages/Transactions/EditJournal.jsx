@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import AccountSelect from '@/Components/AccountSelect';
+import CustomSelect from '@/Components/CustomSelect';
 import { Plus, Trash2, ArrowLeft, CheckCircle2, AlertCircle, Save, Send } from 'lucide-react';
 
-export default function EditJournal({ entry, periods, accounts }) {
+export default function EditJournal({ entry, journal, periods, accounts }) {
+    entry = entry || journal || {};
+
     const { data, setData, put, post, processing, errors } = useForm({
-        fiscal_period_id: entry.fiscal_period_id || periods?.[0]?.id || '',
-        entry_date: entry.entry_date ? entry.entry_date.substring(0, 10) : new Date().toISOString().split('T')[0],
-        description: entry.description || '',
-        reference: entry.reference || '',
-        lines: entry.lines?.length > 0 ? entry.lines.map(line => ({
+        fiscal_period_id: entry?.fiscal_period_id || periods?.[0]?.id || '',
+        entry_date: entry?.entry_date ? entry.entry_date.substring(0, 10) : new Date().toISOString().split('T')[0],
+        description: entry?.description || '',
+        reference: entry?.reference || '',
+        lines: entry?.lines?.length > 0 ? entry.lines.map(line => ({
             account_id: line.account_id || '',
             debit: parseFloat(line.debit) || 0,
             credit: parseFloat(line.credit) || 0,
@@ -104,16 +107,17 @@ export default function EditJournal({ entry, periods, accounts }) {
                                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
                                     Periode Akuntansi
                                 </label>
-                                <select
+                                <CustomSelect
                                     value={data.fiscal_period_id}
                                     onChange={(e) => setData('fiscal_period_id', e.target.value)}
                                     required
-                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full"
                                 >
+                                    <option value="">Pilih Periode</option>
                                     {periods?.map((p) => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
-                                </select>
+                                </CustomSelect>
                             </div>
 
                             <div>
@@ -125,7 +129,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                                     value={data.entry_date}
                                     onChange={(e) => setData('entry_date', e.target.value)}
                                     required
-                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
 
@@ -138,7 +142,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                                     placeholder="No. Referensi"
                                     value={data.reference}
                                     onChange={(e) => setData('reference', e.target.value)}
-                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 font-mono"
+                                    className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 font-mono"
                                 />
                             </div>
                         </div>
@@ -153,7 +157,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                                 value={data.description}
                                 onChange={(e) => setData('description', e.target.value)}
                                 required
-                                className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                                className="w-full py-2.5 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
                     </div>
@@ -180,7 +184,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                         <div className="space-y-3">
                             {data.lines.map((line, idx) => (
                                 <div key={idx} className="p-3 bg-gray-50/50 dark:bg-gray-800/40 rounded-xl border border-gray-200/60 dark:border-gray-700/60 space-y-2">
-                                    <div className="flex flex-col md:flex-row items-center gap-3">
+                                    <div className="flex flex-col md:flex-row items-start gap-3">
                                         <div className="flex-1 w-full">
                                             <AccountSelect
                                                 value={line.account_id}
@@ -189,36 +193,38 @@ export default function EditJournal({ entry, periods, accounts }) {
                                             />
                                         </div>
 
-                                        <div className="w-full md:w-40">
-                                            <input
-                                                type="text"
-                                                inputMode="numeric"
-                                                placeholder="Debit (Rp)"
-                                                value={formatNumberInput(line.debit)}
-                                                onChange={(e) => handleLineChange(idx, 'debit', parseNumberInput(e.target.value))}
-                                                className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white"
-                                            />
-                                        </div>
+                                        <div className="flex items-center gap-2 w-full md:w-auto">
+                                            <div className="flex-1 md:w-36">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    placeholder="Debit (Rp)"
+                                                    value={formatNumberInput(line.debit)}
+                                                    onChange={(e) => handleLineChange(idx, 'debit', parseNumberInput(e.target.value))}
+                                                    className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+                                                />
+                                            </div>
 
-                                        <div className="w-full md:w-40">
-                                            <input
-                                                type="text"
-                                                inputMode="numeric"
-                                                placeholder="Kredit (Rp)"
-                                                value={formatNumberInput(line.credit)}
-                                                onChange={(e) => handleLineChange(idx, 'credit', parseNumberInput(e.target.value))}
-                                                className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white"
-                                            />
-                                        </div>
+                                            <div className="flex-1 md:w-36">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    placeholder="Kredit (Rp)"
+                                                    value={formatNumberInput(line.credit)}
+                                                    onChange={(e) => handleLineChange(idx, 'credit', parseNumberInput(e.target.value))}
+                                                    className="w-full py-2 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-mono text-right text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+                                                />
+                                            </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => removeLine(idx)}
-                                            disabled={data.lines.length <= 2}
-                                            className="p-2 text-gray-400 hover:text-rose-500 rounded-lg disabled:opacity-30 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeLine(idx)}
+                                                disabled={data.lines.length <= 2}
+                                                className="p-2 text-gray-400 hover:text-rose-500 rounded-lg disabled:opacity-30 transition-colors shrink-0"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <input
@@ -226,7 +232,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                                         placeholder="Keterangan rincian baris ini (opsional)..."
                                         value={line.description || ''}
                                         onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
-                                        className="w-full py-1.5 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400"
+                                        className="w-full py-1.5 px-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
                                     />
                                 </div>
                             ))}
@@ -236,7 +242,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                             <button
                                 type="button"
                                 onClick={addLine}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-xl transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-xl transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
                                 <span>Tambah Baris</span>
@@ -260,7 +266,7 @@ export default function EditJournal({ entry, periods, accounts }) {
                         <button
                             type="submit"
                             disabled={processing || !isBalanced}
-                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center gap-2"
+                            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all flex items-center gap-2"
                         >
                             <Save className="w-4 h-4" />
                             <span>{processing ? 'Menyimpan...' : 'Simpan Jurnal'}</span>

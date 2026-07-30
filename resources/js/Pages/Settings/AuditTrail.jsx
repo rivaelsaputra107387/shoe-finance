@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
+import CustomSelect from '@/Components/CustomSelect';
 import { ShieldCheck, Eye, Filter, Database, User, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AuditTrail({ auditTrails, selectedTable, selectedAction }) {
@@ -37,7 +38,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
             <div className="space-y-6">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-                        <ShieldCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                         Log Audit Trail Sistem
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -51,10 +52,10 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                         <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
                             Tabel Database
                         </label>
-                        <select
+                        <CustomSelect
                             value={tableFilter}
                             onChange={(e) => setTableFilter(e.target.value)}
-                            className="w-full py-2 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white"
+                            className="w-full"
                         >
                             <option value="">Semua Tabel</option>
                             <option value="journal_entries">Journal Entries</option>
@@ -62,30 +63,30 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                             <option value="accounts">Accounts</option>
                             <option value="fiscal_periods">Fiscal Periods</option>
                             <option value="bank_mutations">Bank Mutations</option>
-                        </select>
+                        </CustomSelect>
                     </div>
 
                     <div className="w-full md:w-64">
                         <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
                             Jenis Aksi
                         </label>
-                        <select
+                        <CustomSelect
                             value={actionFilter}
                             onChange={(e) => setActionFilter(e.target.value)}
-                            className="w-full py-2 px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white"
+                            className="w-full"
                         >
                             <option value="">Semua Aksi</option>
                             <option value="create">Create</option>
                             <option value="update">Update</option>
                             <option value="delete">Delete</option>
                             <option value="close_period">Close Period</option>
-                        </select>
+                        </CustomSelect>
                     </div>
 
                     <div className="pt-5 w-full md:w-auto">
                         <button
                             onClick={handleFilter}
-                            className="w-full md:w-auto px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all"
+                            className="w-full md:w-auto px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all"
                         >
                             Filter
                         </button>
@@ -116,7 +117,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                                             <td className="py-3 px-5 text-xs font-sans font-semibold text-gray-900 dark:text-white">
                                                 {row.user?.name || 'System'}
                                             </td>
-                                            <td className="py-3 px-5 text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+                                            <td className="py-3 px-5 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
                                                 {row.table_name}
                                             </td>
                                             <td className="py-3 px-5 text-xs text-gray-500">#{row.record_id}</td>
@@ -126,7 +127,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                                             <td className="py-3 px-5 text-right">
                                                 <button
                                                     onClick={() => setActiveRecord(row)}
-                                                    className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                                                    className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-colors"
                                                     title="Lihat Perubahan"
                                                 >
                                                     <Eye className="w-4 h-4" />
@@ -160,7 +161,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                                             link.active
-                                                ? 'bg-indigo-600 text-white font-bold'
+                                                ? 'bg-emerald-600 text-white font-bold'
                                                 : link.url
                                                 ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                                 : 'text-gray-400 cursor-not-allowed'
@@ -183,7 +184,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                                     Detail Perubahan Data (Log #{activeRecord.id})
                                 </h3>
                                 <p className="text-xs text-gray-500">
-                                    Tabel: <strong className="text-indigo-600">{activeRecord.table_name}</strong> | ID: #{activeRecord.record_id} | Oleh: {activeRecord.user?.name || 'System'}
+                                    Tabel: <strong className="text-emerald-600">{activeRecord.table_name}</strong> | ID: #{activeRecord.record_id} | Oleh: {activeRecord.user?.name || 'System'}
                                 </p>
                             </div>
                             {getActionBadge(activeRecord.action)}

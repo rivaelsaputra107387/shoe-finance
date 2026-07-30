@@ -6,7 +6,117 @@ import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
 import MonthYearPicker from '@/Components/MonthYearPicker';
 import DayPicker from '@/Components/DayPicker';
-import { Search, CheckCircle2, Clock, FileEdit, Check, Trash2, Calendar, RotateCcw, Lock, Eye } from 'lucide-react';
+import { Search, CheckCircle2, Clock, FileEdit, Check, Trash2, Calendar, RotateCcw, Lock, Eye, ChevronDown } from 'lucide-react';
+
+function MobileJournalCard({ item, isSelected, canSelect, toggleSelectOne, formatRupiah, isOwnerOrFinance, promptApprove }) {
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const totalDebit = item.lines?.reduce((sum, line) => sum + (parseFloat(line.debit) || 0), 0) || 0;
+
+    return (
+        <div className={`transition-colors ${isSelected ? 'bg-emerald-50/40 dark:bg-emerald-950/30' : 'bg-white dark:bg-transparent'}`}>
+            <div 
+                className="p-3.5 flex items-start gap-3 cursor-pointer select-none"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {canSelect && (
+                    <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectOne(item.id)}
+                            className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer w-4 h-4"
+                        />
+                    </div>
+                )}
+                
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1.5">
+                        <span className="font-mono font-bold text-gray-900 dark:text-white text-sm">{item.reference || '-'}</span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            item.status === 'posted'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                        }`}>
+                            {item.status === 'posted' && <CheckCircle2 className="w-3 h-3" />}
+                            {item.status === 'unapproved' && <Clock className="w-3 h-3" />}
+                            <span className="capitalize">{item.status}</span>
+                        </span>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate pr-4">
+                        {item.description}
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-2">
+                        <span className="font-mono font-bold text-gray-900 dark:text-white text-xs">
+                            {formatRupiah(totalDebit)}
+                        </span>
+                        <div className={`p-1 rounded-full ${isOpen ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isOpen && (
+                <div className="px-3 pb-3 pt-2 border-t border-gray-100 dark:border-gray-800/60 space-y-3 bg-gray-50/50 dark:bg-gray-800/30">
+                    {/* Rincian Akun */}
+                    <div>
+                        <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Rincian Akun</div>
+                        <div className="space-y-2">
+                            {item.lines?.map((line) => (
+                                <div key={line.id} className="flex justify-between items-start text-xs">
+                                    <div className={`flex-1 ${line.credit > 0 ? 'pl-4 text-gray-500' : 'font-medium text-gray-900 dark:text-gray-200'}`}>
+                                        <span className="font-mono text-gray-400 dark:text-gray-500 mr-1.5">{line.account?.code}</span>
+                                        {line.account?.name}
+                                    </div>
+                                    <div className="font-mono font-medium text-right min-w-[80px]">
+                                        {line.debit > 0 && <span className="text-emerald-600 dark:text-emerald-400">{formatRupiah(line.debit)}</span>}
+                                        {line.credit > 0 && <span className="text-rose-600 dark:text-rose-400">{formatRupiah(line.credit)}</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Aksi */}
+                    <div className="flex justify-end gap-2 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                        {item.status === 'unapproved' ? (
+                            <>
+                                <Link
+                                    href={`/app/journal-entries/${item.id}/edit`}
+                                    className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                                >
+                                    <FileEdit className="w-3.5 h-3.5" />
+                                    <span>Edit</span>
+                                </Link>
+
+                                {isOwnerOrFinance && (
+                                    <button
+                                        onClick={() => promptApprove(item)}
+                                        className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-sm"
+                                    >
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Approve</span>
+                                    </button>
+                                )}
+                            </>
+                        ) : (
+                            <Link
+                                href={`/app/journal-entries/${item.id}`}
+                                className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Show Details</span>
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function JournalList({ entries, filters }) {
     const { auth } = usePage().props;
@@ -352,8 +462,8 @@ export default function JournalList({ entries, filters }) {
                                         </div>
                                     </div>
 
-                                    {/* Group Transactions Table */}
-                                    <div className="overflow-x-auto">
+                                    {/* Desktop View: Group Transactions Table */}
+                                    <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/30 dark:bg-gray-900/30">
@@ -466,6 +576,26 @@ export default function JournalList({ entries, filters }) {
                                                 })}
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    {/* Mobile View: Accordion List */}
+                                    <div className="md:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+                                        {group.items.map((item) => {
+                                            const isSelected = selectedIds.includes(item.id);
+                                            const canSelect = item.status !== 'posted';
+                                            return (
+                                                <MobileJournalCard 
+                                                    key={item.id}
+                                                    item={item}
+                                                    isSelected={isSelected}
+                                                    canSelect={canSelect}
+                                                    toggleSelectOne={toggleSelectOne}
+                                                    formatRupiah={formatRupiah}
+                                                    isOwnerOrFinance={isOwnerOrFinance}
+                                                    promptApprove={promptApprove}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );

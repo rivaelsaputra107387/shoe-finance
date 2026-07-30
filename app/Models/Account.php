@@ -8,6 +8,50 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property string $type
+ * @property string $normal_balance
+ * @property string $report_category
+ * @property string|null $cash_flow_category
+ * @property int|null $parent_id
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Account> $children
+ * @property-read int|null $children_count
+ * @property-read string $full_name
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\JournalEntryLine> $journalEntryLines
+ * @property-read int|null $journal_entry_lines_count
+ * @property-read Account|null $parent
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account forReport(string $category)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account labaRugi()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account neraca()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account ofType(string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereCashFlowCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereNormalBalance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereParentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereReportCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Account withoutTrashed()
+ * @mixin \Eloquent
+ */
 class Account extends Model
 {
     use HasFactory, SoftDeletes;

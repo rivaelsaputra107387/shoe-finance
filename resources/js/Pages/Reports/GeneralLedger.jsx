@@ -3,7 +3,7 @@ import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
 import AccountSelect from '@/Components/AccountSelect';
-import { BookOpen, Calendar, Filter, Printer } from 'lucide-react';
+import { BookOpen, Calendar, Filter, Printer, FileText, FileSpreadsheet } from 'lucide-react';
 
 export default function GeneralLedger({ accounts, periods, selectedAccountId, selectedPeriodId, ledgerData }) {
     const [accountId, setAccountId] = useState(selectedAccountId || '');
@@ -57,13 +57,25 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
                         </div>
                     </div>
 
-                    <button
-                        onClick={handlePrint}
-                        className="px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2 shadow-sm self-end sm:self-auto"
-                    >
-                        <Printer className="w-4 h-4" />
-                        <span>Cetak Laporan</span>
-                    </button>
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+
+                        <a
+                            href={`/app/general-ledger/export?format=pdf&account_id=${accountId}&fiscal_period_id=${periodId}`}
+                            target="_blank"
+                            className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-700 transition-colors inline-flex items-center gap-2 shadow-sm"
+                        >
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden sm:inline">PDF</span>
+                        </a>
+                        
+                        <a
+                            href={`/app/general-ledger/export?format=excel&account_id=${accountId}&fiscal_period_id=${periodId}`}
+                            className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span className="hidden sm:inline">Excel</span>
+                        </a>
+                    </div>
                 </div>
 
                 {/* Filter Selector */}

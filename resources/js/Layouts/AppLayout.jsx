@@ -31,10 +31,11 @@ export default function AppLayout({ children, title }) {
     const { auth, flash, url } = usePage().props;
     const [darkMode, setDarkMode] = useState(() => {
         return localStorage.getItem('theme') === 'dark' ||
-            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            (!('theme' in localStorage) && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     });
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+    const [topbarUserMenuOpen, setTopbarUserMenuOpen] = useState(false);
 
     useEffect(() => {
         if (darkMode) {
@@ -82,6 +83,7 @@ export default function AppLayout({ children, title }) {
                 { name: 'Chart of Accounts', href: '/app/accounts', icon: ListTree, show: isOwnerOrFinance },
                 { name: 'Periode Akuntansi', href: '/app/fiscal-periods', icon: Calendar, show: isOwnerOrFinance },
                 { name: 'Penutupan Periode', href: '/app/period-closing', icon: Lock, show: isOwner },
+                { name: 'Manajemen Akun', href: '/app/users', icon: User, show: isOwner },
                 { name: 'Audit Trail', href: '/app/audit-trail', icon: ShieldCheck, show: isOwner },
             ].filter(i => i.show),
         },
@@ -181,31 +183,6 @@ export default function AppLayout({ children, title }) {
                         ))}
                     </nav>
 
-                    {/* Sidebar Footer User Card */}
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-                        <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/50">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                                    {auth?.user?.name ? auth.user.name.charAt(0).toUpperCase() : 'U'}
-                                </div>
-                                <div className="flex flex-col truncate">
-                                    <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                                        {auth?.user?.name}
-                                    </span>
-                                    <span className="text-[10px] text-gray-500 dark:text-gray-400 capitalize truncate">
-                                        {userRoles.join(', ') || 'User'}
-                                    </span>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setLogoutModalOpen(true)}
-                                title="Logout"
-                                className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
                 </aside>
 
                 {/* Main Content Area */}
@@ -234,9 +211,41 @@ export default function AppLayout({ children, title }) {
                                 {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
                             </button>
 
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                <User className="w-3.5 h-3.5" />
-                                <span>{auth?.user?.name}</span>
+                            <div className="relative hidden sm:block">
+                                <button 
+                                    onClick={() => setTopbarUserMenuOpen(!topbarUserMenuOpen)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 transition-colors group"
+                                >
+                                    <img src={auth?.user?.profile_photo_url} alt={auth?.user?.name} className="w-5 h-5 rounded-full object-cover" />
+                                    <span>{auth?.user?.name}</span>
+                                    <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${topbarUserMenuOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {topbarUserMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setTopbarUserMenuOpen(false)}></div>
+                                        <div className="absolute right-0 mt-2 w-48 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 origin-top-right">
+                                            <Link 
+                                                href="/app/profile" 
+                                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full"
+                                                onClick={() => setTopbarUserMenuOpen(false)}
+                                            >
+                                                <User className="w-4 h-4 text-gray-400" />
+                                                <span className="font-medium">Edit Profil</span>
+                                            </Link>
+                                            <button 
+                                                onClick={() => {
+                                                    setTopbarUserMenuOpen(false);
+                                                    setLogoutModalOpen(true);
+                                                }} 
+                                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors w-full text-left"
+                                            >
+                                                <LogOut className="w-4 h-4" />
+                                                <span className="font-medium">Logout</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </header>

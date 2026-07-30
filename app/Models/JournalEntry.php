@@ -8,6 +8,59 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property \Illuminate\Support\Carbon $entry_date
+ * @property string|null $reference
+ * @property string $description
+ * @property int $fiscal_period_id
+ * @property int $created_by
+ * @property bool $is_closing
+ * @property string|null $status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int|null $posted_by
+ * @property \Illuminate\Support\Carbon|null $posted_at
+ * @property int|null $submitted_by
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property-read \App\Models\User $creator
+ * @property-read \App\Models\FiscalPeriod $fiscalPeriod
+ * @property-read bool $is_balanced
+ * @property-read float $total_credit
+ * @property-read float $total_debit
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\JournalEntryLine> $lines
+ * @property-read int|null $lines_count
+ * @property-read \App\Models\User|null $postedBy
+ * @property-read \App\Models\User|null $submittedBy
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry closing()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry draft()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry forPeriod(int $fiscalPeriodId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry posted()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry regular()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereEntryDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereFiscalPeriodId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereIsClosing($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry wherePostedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry wherePostedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereSubmittedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereSubmittedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|JournalEntry withoutTrashed()
+ * @mixin \Eloquent
+ */
 class JournalEntry extends Model
 {
     use HasFactory, SoftDeletes;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
-import { Sheet, CheckCircle2, AlertCircle, Printer } from 'lucide-react';
+import { Sheet, CheckCircle2, AlertCircle, Printer, FileText, FileSpreadsheet } from 'lucide-react';
 
 export default function TrialBalance({ periods, selectedPeriodId, reportData }) {
     const [periodId, setPeriodId] = useState(selectedPeriodId || '');
@@ -49,13 +49,23 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
                             </CustomSelect>
                         </div>
 
-                        <button
-                            onClick={handlePrint}
-                            className="px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-2 shadow-sm"
+
+                        <a
+                            href={`/app/trial-balance/export?format=pdf&fiscal_period_id=${periodId}`}
+                            target="_blank"
+                            className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                         >
-                            <Printer className="w-4 h-4" />
-                            <span className="hidden sm:inline">Cetak</span>
-                        </button>
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden sm:inline">PDF</span>
+                        </a>
+                        
+                        <a
+                            href={`/app/trial-balance/export?format=excel&fiscal_period_id=${periodId}`}
+                            className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span className="hidden sm:inline">Excel</span>
+                        </a>
                     </div>
                 </div>
 

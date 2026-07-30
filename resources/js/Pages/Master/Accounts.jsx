@@ -138,7 +138,7 @@ export default function Accounts({ accounts, parents, filters }) {
 
                     <button
                         onClick={() => { reset(); setCreateModalOpen(true); }}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Tambah Akun Baru</span>
@@ -305,25 +305,25 @@ export default function Accounts({ accounts, parents, filters }) {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block font-semibold mb-1">Tipe</label>
-                                    <select value={data.type} onChange={(e) => setData('type', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl">
+                                    <CustomSelect value={data.type} onChange={(e) => setData('type', e.target.value)} className="w-full">
                                         <option value="Aset">Aset</option>
                                         <option value="Kewajiban">Kewajiban</option>
                                         <option value="Ekuitas">Ekuitas</option>
                                         <option value="Pendapatan">Pendapatan</option>
                                         <option value="Beban">Beban</option>
-                                    </select>
+                                    </CustomSelect>
                                 </div>
                                 <div>
                                     <label className="block font-semibold mb-1">Saldo Normal</label>
-                                    <select value={data.normal_balance} onChange={(e) => setData('normal_balance', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl">
+                                    <CustomSelect value={data.normal_balance} onChange={(e) => setData('normal_balance', e.target.value)} className="w-full">
                                         <option value="Debet">Debet</option>
                                         <option value="Kredit">Kredit</option>
-                                    </select>
+                                    </CustomSelect>
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 pt-3">
                                 <button type="button" onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
-                                <button type="submit" disabled={processing} className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl">
+                                <button type="submit" disabled={processing} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl">
                                     {editingAccount ? 'Perbarui' : 'Simpan'}
                                 </button>
                             </div>
