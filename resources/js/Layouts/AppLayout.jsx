@@ -82,9 +82,9 @@ export default function AppLayout({ children, title }) {
             items: [
                 { name: 'Chart of Accounts', href: '/app/accounts', icon: ListTree, show: isOwnerOrFinance },
                 { name: 'Periode Akuntansi', href: '/app/fiscal-periods', icon: Calendar, show: isOwnerOrFinance },
-                { name: 'Penutupan Periode', href: '/app/period-closing', icon: Lock, show: isOwner },
-                { name: 'Manajemen Akun', href: '/app/users', icon: User, show: isOwner },
-                { name: 'Audit Trail', href: '/app/audit-trail', icon: ShieldCheck, show: isOwner },
+                { name: 'Penutupan Periode', href: '/app/period-closing', icon: Lock, show: isOwnerOrFinance },
+                { name: 'Manajemen Akun', href: '/app/users', icon: User, show: isOwnerOrFinance },
+                { name: 'Audit Trail', href: '/app/audit-trail', icon: ShieldCheck, show: isOwnerOrFinance },
             ].filter(i => i.show),
         },
     ];
