@@ -12,6 +12,14 @@ class TrialBalanceService
      * Generate trial balance (neraca lajur) for a given fiscal period.
      * Uses a SINGLE bulk query — no N+1.
      *
+     * Metode yang digunakan: NET BALANCE (Saldo Bersih per Akun)
+     * - Jika net > 0 (debit > kredit): tampil di kolom "Saldo Debet"
+     * - Jika net < 0 (kredit > debit): tampil di kolom "Saldo Kredit"
+     *
+     * Ini berbeda dari Trial Balance GROSS (yang menampilkan total debit
+     * dan total kredit masing-masing secara terpisah). Metode Net Balance
+     * lebih ringkas dan umum digunakan untuk laporan internal.
+     *
      * @return array ['accounts' => Collection, 'total_debit' => float, 'total_credit' => float, 'is_balanced' => bool]
      */
     public function generate(int $fiscalPeriodId): array
@@ -33,6 +41,9 @@ class TrialBalanceService
                 $credit = $row ? (float) $row->total_credit : 0.0;
                 $net    = $debit - $credit;
 
+                // Net balance method:
+                // Positive net (debit > credit) → shown in Saldo Debet column
+                // Negative net (credit > debit) → shown in Saldo Kredit column
                 return [
                     'id'             => $account->id,
                     'code'           => $account->code,
@@ -49,11 +60,12 @@ class TrialBalanceService
         $totalCredit = $accounts->sum('credit');
 
         return [
-            'accounts'    => $accounts->values(),
-            'total_debit' => round($totalDebit, 2),
-            'total_credit'=> round($totalCredit, 2),
-            'is_balanced' => abs($totalDebit - $totalCredit) < 0.01,
-            'period'      => $period,
+            'accounts'     => $accounts->values(),
+            'total_debit'  => round($totalDebit, 2),
+            'total_credit' => round($totalCredit, 2),
+            'is_balanced'  => abs($totalDebit - $totalCredit) < 0.01,
+            'period'       => $period,
+            'method'       => 'net_balance', // for UI label awareness
         ];
     }
 }

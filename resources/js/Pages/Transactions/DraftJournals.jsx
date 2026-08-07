@@ -255,11 +255,11 @@ export default function DraftJournals({ entries }) {
 
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                     {/* Desktop View: Group Transactions Table */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="hidden md:block">
+                        <table className="w-full text-left border-collapse table-fixed">
                             <thead>
                                 <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <th className="py-2.5 px-2.5 w-8">
+                                    <th className="py-2.5 px-2 w-8">
                                         <input
                                             type="checkbox"
                                             checked={allSelected}
@@ -267,14 +267,14 @@ export default function DraftJournals({ entries }) {
                                             className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                                         />
                                     </th>
-                                    <th className="py-2.5 px-2.5 w-24">Tanggal</th>
-                                    <th className="py-2.5 px-2.5 w-28">Referensi</th>
-                                    <th className="py-2.5 px-2.5 max-w-[160px]">Keterangan</th>
-                                    <th className="py-2.5 px-3 min-w-[180px]">Rincian Akun</th>
-                                    <th className="py-2.5 px-3 w-28 text-right text-emerald-600 dark:text-emerald-400">Debet</th>
-                                    <th className="py-2.5 px-3 w-28 text-right text-rose-600 dark:text-rose-400">Kredit</th>
-                                    <th className="py-2.5 px-2.5 w-24">Status Akun</th>
-                                    <th className="py-2.5 px-3 w-28 text-right">Aksi</th>
+                                    <th className="py-2.5 px-2 w-[90px]">Tanggal</th>
+                                    <th className="py-2.5 px-2 w-[100px]">Referensi</th>
+                                    <th className="py-2.5 px-2 w-[130px]">Keterangan</th>
+                                    <th className="py-2.5 px-2">Rincian Akun</th>
+                                    <th className="py-2.5 px-2 w-[105px] text-right text-emerald-600 dark:text-emerald-400">Debet</th>
+                                    <th className="py-2.5 px-2 w-[105px] text-right text-rose-600 dark:text-rose-400">Kredit</th>
+                                    <th className="py-2.5 px-2 w-[100px]">Status Akun</th>
+                                    <th className="py-2.5 px-2 w-[120px] text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
@@ -284,7 +284,7 @@ export default function DraftJournals({ entries }) {
                                         const isSelected = selectedIds.includes(item.id);
                                         return (
                                             <tr key={item.id} className={`transition-colors ${isSelected ? 'bg-emerald-50/40 dark:bg-emerald-950/30' : 'hover:bg-gray-50/60 dark:hover:bg-gray-800/40'}`}>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                                <td className="py-2.5 px-2">
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
@@ -292,16 +292,16 @@ export default function DraftJournals({ entries }) {
                                                         className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap font-mono font-medium text-gray-600 dark:text-gray-400">
+                                                <td className="py-2.5 px-2 font-mono font-medium text-gray-600 dark:text-gray-400 text-[11px]">
                                                     {formatDate(item.entry_date)}
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap font-mono font-bold text-gray-900 dark:text-white">
+                                                <td className="py-2.5 px-2 font-mono font-bold text-gray-900 dark:text-white text-[11px]">
                                                     {item.reference || '-'}
                                                 </td>
-                                                <td className="py-2.5 px-2.5 text-gray-800 dark:text-gray-200 font-medium max-w-[160px] truncate" title={item.description}>
+                                                <td className="py-2.5 px-2 text-gray-800 dark:text-gray-200 font-medium truncate" title={item.description}>
                                                     {item.description}
                                                 </td>
-                                                <td className="py-2.5 px-3">
+                                                <td className="py-2.5 px-2">
                                                     <div className="space-y-1">
                                                         {item.lines?.map((line) => (
                                                             <div key={line.id} className={`text-[11px] truncate ${line.credit > 0 ? 'pl-3 text-gray-500' : 'font-medium text-gray-900 dark:text-gray-200'}`}>
@@ -311,7 +311,7 @@ export default function DraftJournals({ entries }) {
                                                         ))}
                                                     </div>
                                                 </td>
-                                                <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                                <td className="py-2.5 px-2 text-right">
                                                     <div className="space-y-1 font-mono font-semibold tabular-nums text-[11px] text-emerald-600 dark:text-emerald-400">
                                                         {item.lines?.map((line) => (
                                                             <div key={line.id}>
@@ -320,7 +320,7 @@ export default function DraftJournals({ entries }) {
                                                         ))}
                                                     </div>
                                                 </td>
-                                                <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                                <td className="py-2.5 px-2 text-right">
                                                     <div className="space-y-1 font-mono font-semibold tabular-nums text-[11px] text-rose-600 dark:text-rose-400">
                                                         {item.lines?.map((line) => (
                                                             <div key={line.id}>
@@ -329,36 +329,38 @@ export default function DraftJournals({ entries }) {
                                                         ))}
                                                     </div>
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                                <td className="py-2.5 px-2">
                                                     {hasSuspense ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                                                             <AlertTriangle className="w-3 h-3" />
                                                             <span>Akun 9999</span>
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                                                             <span>Akun Lengkap</span>
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="py-2.5 px-3 whitespace-nowrap text-right space-x-1.5">
-                                                    <Link
-                                                        href={`/app/journal-entries/${item.id}/edit`}
-                                                        className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
-                                                    >
-                                                        <Pencil className="w-3.5 h-3.5" />
-                                                        <span>{hasSuspense ? 'Lengkapi Akun' : 'Edit'}</span>
-                                                    </Link>
+                                                <td className="py-2.5 px-2 text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Link
+                                                            href={`/app/journal-entries/${item.id}/edit`}
+                                                            className="px-2 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors"
+                                                        >
+                                                            <Pencil className="w-3 h-3" />
+                                                            <span>{hasSuspense ? 'Lengkapi' : 'Edit'}</span>
+                                                        </Link>
 
-                                                    {!hasSuspense && (
+                                                        {!hasSuspense && (
                                                         <button
                                                             onClick={() => promptSubmit(item)}
-                                                            className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
+                                                            className="px-2 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
                                                         >
                                                             <span>Submit</span>
                                                             <ArrowRight className="w-3 h-3" />
                                                         </button>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

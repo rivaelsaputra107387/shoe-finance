@@ -142,11 +142,14 @@ export default function FiscalPeriods({ periods }) {
                             </div>
                             {editingPeriod && (
                                 <div>
-                                    <label className="block font-semibold mb-1">Status</label>
-                                    <CustomSelect value={data.status} onChange={(e) => setData('status', e.target.value)} className="w-full">
+                                    <label className="block font-semibold mb-1 text-gray-700 dark:text-gray-300">Status Periode</label>
+                                    <CustomSelect value={data.status} onChange={(e) => setData('status', e.target.value)} disabled={true} className="w-full">
                                         <option value="open">Open</option>
                                         <option value="closed">Closed</option>
                                     </CustomSelect>
+                                    <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 italic">
+                                        * Status periode dikunci. Penutupan periode hanya dapat dilakukan melalui menu <strong>Penutupan Periode</strong>.
+                                    </p>
                                 </div>
                             )}
                             <div className="flex justify-end gap-3 pt-3">

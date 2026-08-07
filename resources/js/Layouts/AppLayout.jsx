@@ -61,7 +61,7 @@ export default function AppLayout({ children, title }) {
         {
             group: 'Transaksi',
             items: [
-                { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: isOwnerOrFinance },
+                { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: true },
                 { name: 'Draft Jurnal', href: '/app/draft-journals', icon: BookOpen, show: true },
                 { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
             ].filter(i => i.show),
@@ -146,8 +146,10 @@ export default function AppLayout({ children, title }) {
 
                     {/* Navigation Menu */}
                     <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-6">
-                        {navigation.map((group, groupIdx) => (
-                            <div key={groupIdx}>
+                        {navigation.map((group, groupIdx) => {
+                            if (group.items.length === 0) return null;
+                            return (
+                                <div key={groupIdx}>
                                 <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
                                     {group.group}
                                 </h3>
@@ -180,7 +182,8 @@ export default function AppLayout({ children, title }) {
                                     })}
                                 </div>
                             </div>
-                        ))}
+                        );
+                    })}
                     </nav>
 
                     {/* Sidebar Footer */}

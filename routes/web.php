@@ -92,8 +92,11 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/fiscal-periods', [MasterController::class, 'storeFiscalPeriod'])->name('master.fiscal-periods.store');
     Route::put('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'updateFiscalPeriod'])->name('master.fiscal-periods.update');
 
-    Route::get('/period-closing', [PeriodClosingController::class, 'index'])->name('period-closing.index');
-    Route::post('/period-closing/execute', [PeriodClosingController::class, 'execute'])->name('period-closing.execute');
+    // Penutupan Periode (Owner Only - enforced at route level)
+    Route::middleware(['role:owner'])->group(function () {
+        Route::get('/period-closing', [PeriodClosingController::class, 'index'])->name('period-closing.index');
+        Route::post('/period-closing/execute', [PeriodClosingController::class, 'execute'])->name('period-closing.execute');
+    });
 
     Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('audit-trail.index');
 

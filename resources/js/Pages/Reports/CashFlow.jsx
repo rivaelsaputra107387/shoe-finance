@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
-import { Receipt, Printer, FileText, FileSpreadsheet } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 
 export default function CashFlow({ periods, selectedPeriodId, reportData }) {
     const [periodId, setPeriodId] = useState(selectedPeriodId || '');
@@ -13,11 +13,12 @@ export default function CashFlow({ periods, selectedPeriodId, reportData }) {
     };
 
     const formatRupiah = (val) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
-    };
-
-    const handlePrint = () => {
-        window.print();
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(val || 0);
     };
 
     return (
@@ -49,7 +50,6 @@ export default function CashFlow({ periods, selectedPeriodId, reportData }) {
                             </CustomSelect>
                         </div>
 
-
                         <a
                             href={`/app/cash-flow-statement/export?format=pdf&fiscal_period_id=${periodId}`}
                             target="_blank"
@@ -58,7 +58,7 @@ export default function CashFlow({ periods, selectedPeriodId, reportData }) {
                             <FileText className="w-4 h-4" />
                             <span className="hidden sm:inline">PDF</span>
                         </a>
-                        
+
                         <a
                             href={`/app/cash-flow-statement/export?format=excel&fiscal_period_id=${periodId}`}
                             className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
@@ -71,77 +71,97 @@ export default function CashFlow({ periods, selectedPeriodId, reportData }) {
 
                 {reportData && (
                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 lg:p-8 space-y-6">
-                        {/* Operating Activities */}
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 border-b pb-1">
-                                Arus Kas dari Aktivitas Operasi
-                            </h3>
-                            <div className="flex justify-between text-sm py-1">
-                                <span className="text-gray-700 dark:text-gray-300">Penerimaan Kas dari Pelanggan</span>
-                                <span className="font-mono text-emerald-600 dark:text-emerald-400">+{formatRupiah(reportData.operating_inflows)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm py-1">
-                                <span className="text-gray-700 dark:text-gray-300">Pembayaran Kas untuk Beban Operasional</span>
-                                <span className="font-mono text-rose-600 dark:text-rose-400">-{formatRupiah(reportData.operating_outflows)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-bold pt-2 border-t text-gray-900 dark:text-white">
-                                <span>Arus Kas Bersih dari Aktivitas Operasi</span>
-                                <span className="font-mono">{formatRupiah(reportData.net_operating)}</span>
-                            </div>
-                        </div>
 
-                        {/* Investing Activities */}
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 border-b pb-1">
-                                Arus Kas dari Aktivitas Investasi
-                            </h3>
-                            <div className="flex justify-between text-sm py-1">
-                                <span className="text-gray-700 dark:text-gray-300">Pembelian Aset Tetap / Peralatan</span>
-                                <span className="font-mono text-rose-600 dark:text-rose-400">-{formatRupiah(reportData.investing_outflows)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-bold pt-2 border-t text-gray-900 dark:text-white">
-                                <span>Arus Kas Bersih dari Aktivitas Investasi</span>
-                                <span className="font-mono">{formatRupiah(reportData.net_investing)}</span>
-                            </div>
-                        </div>
+                        {/* ── AKTIVITAS OPERASI ── */}
+                        <CashFlowSection
+                            title="Arus Kas dari Aktivitas Operasi"
+                            items={reportData.operating ?? []}
+                            total={reportData.total_operating ?? 0}
+                            totalLabel="Arus Kas Bersih dari Aktivitas Operasi"
+                            formatRupiah={formatRupiah}
+                        />
 
-                        {/* Financing Activities */}
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 border-b pb-1">
-                                Arus Kas dari Aktivitas Pendanaan
-                            </h3>
-                            <div className="flex justify-between text-sm py-1">
-                                <span className="text-gray-700 dark:text-gray-300">Penerimaan Setoran Modal / Utang</span>
-                                <span className="font-mono text-emerald-600 dark:text-emerald-400">+{formatRupiah(reportData.financing_inflows)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm py-1">
-                                <span className="text-gray-700 dark:text-gray-300">Pembayaran Prive / Angsuran Utang</span>
-                                <span className="font-mono text-rose-600 dark:text-rose-400">-{formatRupiah(reportData.financing_outflows)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-bold pt-2 border-t text-gray-900 dark:text-white">
-                                <span>Arus Kas Bersih dari Aktivitas Pendanaan</span>
-                                <span className="font-mono">{formatRupiah(reportData.net_financing)}</span>
-                            </div>
-                        </div>
+                        {/* ── AKTIVITAS INVESTASI ── */}
+                        <CashFlowSection
+                            title="Arus Kas dari Aktivitas Investasi"
+                            items={reportData.investing ?? []}
+                            total={reportData.total_investing ?? 0}
+                            totalLabel="Arus Kas Bersih dari Aktivitas Investasi"
+                            formatRupiah={formatRupiah}
+                        />
 
-                        {/* Total Summary */}
+                        {/* ── AKTIVITAS PENDANAAN ── */}
+                        <CashFlowSection
+                            title="Arus Kas dari Aktivitas Pendanaan"
+                            items={reportData.financing ?? []}
+                            total={reportData.total_financing ?? 0}
+                            totalLabel="Arus Kas Bersih dari Aktivitas Pendanaan"
+                            formatRupiah={formatRupiah}
+                        />
+
+                        {/* ── RINGKASAN AKHIR ── */}
                         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-2">
                             <div className="flex justify-between text-sm font-bold text-emerald-900 dark:text-emerald-200">
                                 <span>Kenaikan / (Penurunan) Bersih Kas</span>
-                                <span className="font-mono">{formatRupiah(reportData.net_change_in_cash)}</span>
+                                <span className="font-mono tabular-nums">{formatRupiah(reportData.net_increase)}</span>
                             </div>
                             <div className="flex justify-between text-xs text-emerald-700 dark:text-emerald-300">
                                 <span>Saldo Kas Awal Periode</span>
-                                <span className="font-mono">{formatRupiah(reportData.beginning_cash)}</span>
+                                <span className="font-mono tabular-nums">{formatRupiah(reportData.beginning_cash)}</span>
                             </div>
                             <div className="flex justify-between text-sm font-extrabold text-emerald-900 dark:text-emerald-100 pt-2 border-t border-emerald-200 dark:border-emerald-800">
                                 <span>SALDO KAS AKHIR PERIODE</span>
-                                <span className="font-mono">{formatRupiah(reportData.ending_cash)}</span>
+                                <span className="font-mono tabular-nums">{formatRupiah(reportData.ending_cash)}</span>
                             </div>
                         </div>
                     </div>
                 )}
             </div>
         </AppLayout>
+    );
+}
+
+/**
+ * Komponen seksi arus kas: Operasi / Investasi / Pendanaan.
+ * Menampilkan detail per akun dari service response, beserta total bersih.
+ */
+function CashFlowSection({ title, items, total, totalLabel, formatRupiah }) {
+    const hasItems = items.length > 0;
+
+    return (
+        <div className="space-y-1">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-1 mb-2">
+                {title}
+            </h3>
+
+            {hasItems ? (
+                items.map((item, i) => (
+                    <div key={i} className="flex justify-between items-start text-sm py-1">
+                        <span className="text-gray-700 dark:text-gray-300 flex-1 pr-4">
+                            <span className="text-gray-400 dark:text-gray-500 mr-1.5 text-xs font-mono">{item.account_code}</span>
+                            {item.account_name}
+                        </span>
+                        <span className={`font-mono tabular-nums text-right shrink-0 ${
+                            item.amount >= 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                        }`}>
+                            {item.amount >= 0 ? '+' : ''}{formatRupiah(item.amount)}
+                        </span>
+                    </div>
+                ))
+            ) : (
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic py-1">
+                    Tidak ada transaksi pada kategori ini.
+                </p>
+            )}
+
+            <div className="flex justify-between text-sm font-bold pt-2 mt-1 border-t border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
+                <span>{totalLabel}</span>
+                <span className={`font-mono tabular-nums ${total < 0 ? 'text-rose-600 dark:text-rose-400' : ''}`}>
+                    {formatRupiah(total)}
+                </span>
+            </div>
+        </div>
     );
 }

@@ -592,11 +592,11 @@ export default function BankMutations({ mutations, filters }) {
 
                 {/* Table */}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="hidden md:block">
+                        <table className="w-full text-left border-collapse table-fixed">
                             <thead>
                                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-gray-800/50">
-                                    <th className="py-2.5 px-2.5 w-8">
+                                    <th className="py-2.5 px-2 w-8">
                                         <input
                                             type="checkbox"
                                             checked={allSelected}
@@ -604,13 +604,13 @@ export default function BankMutations({ mutations, filters }) {
                                             className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                                         />
                                     </th>
-                                    <th className="py-2.5 px-2.5 w-28">Tanggal</th>
-                                    <th className="py-2.5 px-2.5 w-20">Bank</th>
-                                    <th className="py-2.5 px-2.5 max-w-[260px]">Keterangan Mutasi</th>
-                                    <th className="py-2.5 px-2.5 w-28">Tipe</th>
-                                    <th className="py-2.5 px-3 w-32 text-right">Nominal</th>
-                                    <th className="py-2.5 px-2.5 w-20">Status</th>
-                                    <th className="py-2.5 px-4 w-48 text-right">Aksi</th>
+                                    <th className="py-2.5 px-2 w-[100px]">Tanggal</th>
+                                    <th className="py-2.5 px-2 w-[80px]">Bank</th>
+                                    <th className="py-2.5 px-2">Keterangan Mutasi</th>
+                                    <th className="py-2.5 px-2 w-[100px]">Tipe</th>
+                                    <th className="py-2.5 px-2 w-[110px] text-right">Nominal</th>
+                                    <th className="py-2.5 px-2 w-[72px]">Status</th>
+                                    <th className="py-2.5 px-2 w-[160px] text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-xs">
@@ -619,7 +619,7 @@ export default function BankMutations({ mutations, filters }) {
                                         const isSelected = selectedIds.includes(item.id);
                                         return (
                                             <tr key={item.id} className={`transition-colors ${isSelected ? 'bg-emerald-50/40 dark:bg-emerald-950/30' : 'hover:bg-gray-50/60 dark:hover:bg-gray-800/40'}`}>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                                <td className="py-2.5 px-2">
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
@@ -627,10 +627,10 @@ export default function BankMutations({ mutations, filters }) {
                                                         className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap font-mono font-medium text-gray-700 dark:text-gray-300">
+                                                <td className="py-2.5 px-2 font-mono font-medium text-gray-700 dark:text-gray-300 text-[11px]">
                                                     {formatDate(item.date)}
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                                <td className="py-2.5 px-2">
                                                     <div className="flex flex-col gap-1">
                                                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 w-max">
                                                             {item.bank_source}
@@ -644,55 +644,55 @@ export default function BankMutations({ mutations, filters }) {
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="py-2.5 px-2.5 text-gray-800 dark:text-gray-200 font-medium max-w-[260px] truncate" title={item.description}>
+                                                <td className="py-2.5 px-2 text-gray-800 dark:text-gray-200 font-medium truncate" title={item.description}>
                                                     {item.description}
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                                <td className="py-2.5 px-2">
+                                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                                                         item.mutation_type === 'IN'
                                                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
                                                             : 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400'
                                                     }`}>
                                                         {item.mutation_type === 'IN' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                                        <span>{item.mutation_type === 'IN' ? 'Uang Masuk' : 'Uang Keluar'}</span>
+                                                        <span>{item.mutation_type === 'IN' ? 'Masuk' : 'Keluar'}</span>
                                                     </span>
                                                 </td>
-                                                <td className="py-2.5 px-3 whitespace-nowrap text-right font-mono font-semibold text-gray-900 dark:text-white">
+                                                <td className="py-2.5 px-2 text-right font-mono font-semibold text-gray-900 dark:text-white text-[11px]">
                                                     {formatRupiah(item.amount)}
                                                 </td>
-                                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                                <td className="py-2.5 px-2">
                                                     <span className="capitalize text-[11px] font-semibold text-gray-500">
                                                         {item.status}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-4 whitespace-nowrap text-right space-x-2">
+                                                <td className="py-2.5 px-2 text-right">
                                                     {item.status === 'pending' && (
-                                                        <>
+                                                        <div className="flex items-center justify-end gap-1">
                                                             {item.source_type === 'manual' && (
                                                                 <button
                                                                     onClick={() => handleEditOpen(item)}
-                                                                    className="px-2.5 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
+                                                                    className="px-2 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors"
                                                                 >
-                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                    <Pencil className="w-3 h-3" />
                                                                     <span>Edit</span>
                                                                 </button>
                                                             )}
                                                             <button
                                                                 disabled={true}
-                                                                className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-not-allowed opacity-60 select-none"
+                                                                className="px-2 py-1.5 bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 rounded-lg text-[11px] font-semibold cursor-not-allowed opacity-60 select-none"
                                                                 title="Fitur Match API Segera Hadir / Non-Aktif"
                                                             >
-                                                                <span>Match API</span>
+                                                                Match API
                                                             </button>
 
                                                             <button
                                                                 onClick={() => promptGenerateDraft(item)}
-                                                                className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
+                                                                className="px-2 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors shadow-sm"
                                                             >
-                                                                <Sparkles className="w-3.5 h-3.5" />
-                                                                <span>Generate Draft</span>
+                                                                <Sparkles className="w-3 h-3" />
+                                                                <span>Generate</span>
                                                             </button>
-                                                        </>
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>

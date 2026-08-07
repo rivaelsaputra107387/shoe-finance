@@ -12,8 +12,10 @@ class CashFlowReportService
     /**
      * Generate Cash Flow Statement (Laporan Arus Kas).
      *
-     * Uses indirect method: classifies cash movements by analyzing
+     * Uses DIRECT method: classifies cash movements by analyzing
      * counter-accounts in journal entries involving cash/bank accounts.
+     * Each counter-account receives a cash flow amount proportional to
+     * its own value relative to total counter-amount (not divided equally).
      *
      * Structure:
      * - Arus Kas dari Aktivitas Operasi
@@ -48,65 +50,101 @@ class CashFlowReportService
             ->get();
 
         $operating = [];
-        $investing = [];
-        $financing = [];
+        $investing  = [];
+        $financing  = [];
+
+        // Track processed journal entry IDs to avoid double-counting
+        // when multiple cash accounts appear in the same journal entry
+        $processedEntries = [];
 
         foreach ($cashLines as $cashLine) {
             $journalEntry = $cashLine->journalEntry;
-            $cashAmount = (float) $cashLine->debit - (float) $cashLine->credit;
+
+            // Skip if we've already processed this journal entry
+            if (in_array($journalEntry->id, $processedEntries)) {
+                continue;
+            }
+            $processedEntries[] = $journalEntry->id;
+
+            // Total net cash movement in this journal entry
+            // (sum of all cash/bank lines in the entry)
+            $totalCashAmount = 0.0;
+            foreach ($journalEntry->lines as $line) {
+                if (in_array($line->account_id, $cashAccountIds)) {
+                    $totalCashAmount += (float) $line->debit - (float) $line->credit;
+                }
+            }
+
+            // Skip if no net cash movement (e.g. transfer within same account)
+            if (abs($totalCashAmount) < 0.01) {
+                continue;
+            }
 
             // Find counter-accounts (non-cash accounts in the same journal entry)
             $counterLines = $journalEntry->lines
                 ->filter(fn ($line) => !in_array($line->account_id, $cashAccountIds));
 
+            // If all lines are cash accounts (inter-bank transfer), skip
+            if ($counterLines->isEmpty()) {
+                continue;
+            }
+
+            // Calculate total absolute counter-amount for proportional allocation
+            $totalCounterAbs = $counterLines->sum(fn ($line) =>
+                abs((float) $line->debit - (float) $line->credit)
+            );
+
             foreach ($counterLines as $counterLine) {
                 $counterAccount = $counterLine->account;
-                $category = $counterAccount->cash_flow_category ?? $this->inferCategory($counterAccount);
-                $counterAmount = (float) $counterLine->debit - (float) $counterLine->credit;
+                if (!$counterAccount) continue;
 
-                // The cash flow amount proportional to this counter line
-                $proportion = $counterLines->count() > 0
-                    ? abs($cashAmount) / max(1, $counterLines->count())
-                    : abs($cashAmount);
+                $category = $counterAccount->cash_flow_category
+                    ?? $this->inferCategory($counterAccount);
 
-                // Determine sign: cash inflow (+) or outflow (-)
-                $flowAmount = $cashAmount > 0 ? $proportion : -$proportion;
+                $counterAmount = abs((float) $counterLine->debit - (float) $counterLine->credit);
+
+                // Allocate cash proportionally based on this counter-line's value
+                // FIX: was dividing by count(), now using proportional value
+                $proportion = $totalCounterAbs > 0.01
+                    ? $counterAmount / $totalCounterAbs
+                    : (1.0 / max(1, $counterLines->count()));
+
+                $flowAmount = $totalCashAmount * $proportion;
 
                 $item = [
-                    'description' => $journalEntry->description,
+                    'description'  => $journalEntry->description,
                     'account_code' => $counterAccount->code,
                     'account_name' => $counterAccount->name,
-                    'amount' => $flowAmount,
-                    'date' => $journalEntry->entry_date->format('d/m/Y'),
+                    'amount'       => $flowAmount,
+                    'date'         => $journalEntry->entry_date->format('d/m/Y'),
                 ];
 
                 match ($category) {
-                    'Operasi' => $operating[] = $item,
-                    'Investasi' => $investing[] = $item,
-                    'Pendanaan' => $financing[] = $item,
-                    default => $operating[] = $item,
+                    'Operasi'   => $operating[]  = $item,
+                    'Investasi' => $investing[]  = $item,
+                    'Pendanaan' => $financing[]  = $item,
+                    default     => $operating[]  = $item,
                 };
             }
         }
 
         // Aggregate by account
         $operatingGrouped = $this->aggregateByAccount($operating);
-        $investingGrouped = $this->aggregateByAccount($investing);
-        $financingGrouped = $this->aggregateByAccount($financing);
+        $investingGrouped  = $this->aggregateByAccount($investing);
+        $financingGrouped  = $this->aggregateByAccount($financing);
 
         $totalOperating = collect($operatingGrouped)->sum('amount');
-        $totalInvesting = collect($investingGrouped)->sum('amount');
-        $totalFinancing = collect($financingGrouped)->sum('amount');
+        $totalInvesting  = collect($investingGrouped)->sum('amount');
+        $totalFinancing  = collect($financingGrouped)->sum('amount');
 
         $netIncrease = $totalOperating + $totalInvesting + $totalFinancing;
 
-        // Calculate beginning cash balance (simplified: sum of cash account balances at start)
+        // Calculate beginning cash balance (cumulative cash before this period)
         $beginningCashBalance = $this->getBeginningCashBalance($cashAccountIds, $period);
-        $endingCashBalance = $beginningCashBalance + $netIncrease;
+        $endingCashBalance    = $beginningCashBalance + $netIncrease;
 
         // Actual ending balance from ledger for validation
-        // Must use CUMULATIVE balance (all entries up to period end), not just within this period.
-        // This prevents false-positive warnings for periods with no new cash transactions.
+        // Uses CUMULATIVE balance (all entries up to period end).
         $actualEndingBalance = (float) JournalEntryLine::query()
             ->whereIn('account_id', $cashAccountIds)
             ->whereHas('journalEntry', function ($q) use ($period) {
@@ -118,18 +156,18 @@ class CashFlowReportService
             ->value('balance');
 
         return [
-            'period' => $period,
-            'operating' => $operatingGrouped,
-            'total_operating' => round($totalOperating, 2),
-            'investing' => $investingGrouped,
-            'total_investing' => round($totalInvesting, 2),
-            'financing' => $financingGrouped,
-            'total_financing' => round($totalFinancing, 2),
-            'net_increase' => round($netIncrease, 2),
-            'beginning_cash' => round($beginningCashBalance, 2),
-            'ending_cash' => round($endingCashBalance, 2),
-            'actual_ending_cash' => round($actualEndingBalance, 2),
-            'is_valid' => abs($endingCashBalance - $actualEndingBalance) < 0.01,
+            'period'              => $period,
+            'operating'           => $operatingGrouped,
+            'total_operating'     => round($totalOperating, 2),
+            'investing'           => $investingGrouped,
+            'total_investing'     => round($totalInvesting, 2),
+            'financing'           => $financingGrouped,
+            'total_financing'     => round($totalFinancing, 2),
+            'net_increase'        => round($netIncrease, 2),
+            'beginning_cash'      => round($beginningCashBalance, 2),
+            'ending_cash'         => round($endingCashBalance, 2),
+            'actual_ending_cash'  => round($actualEndingBalance, 2),
+            'is_valid'            => abs($endingCashBalance - $actualEndingBalance) < 0.01,
         ];
     }
 
@@ -139,13 +177,13 @@ class CashFlowReportService
     private function inferCategory(Account $account): string
     {
         return match (true) {
-            in_array($account->type, ['Pendapatan', 'Beban']) => 'Operasi',
-            $account->type === 'Aset' && str_starts_with($account->code, '12') => 'Investasi',
-            $account->type === 'Aset' => 'Operasi', // Current assets
-            $account->type === 'Kewajiban' && str_starts_with($account->code, '22') => 'Pendanaan',
-            $account->type === 'Kewajiban' => 'Operasi', // Current liabilities
-            $account->type === 'Ekuitas' => 'Pendanaan',
-            default => 'Operasi',
+            in_array($account->type, ['Pendapatan', 'Beban'])                          => 'Operasi',
+            $account->type === 'Aset' && str_starts_with($account->code, '12')        => 'Investasi',
+            $account->type === 'Aset'                                                  => 'Operasi',
+            $account->type === 'Kewajiban' && str_starts_with($account->code, '22')   => 'Pendanaan',
+            $account->type === 'Kewajiban'                                             => 'Operasi',
+            $account->type === 'Ekuitas'                                               => 'Pendanaan',
+            default                                                                    => 'Operasi',
         };
     }
 
@@ -160,19 +198,18 @@ class CashFlowReportService
             return [
                 'account_code' => $code,
                 'account_name' => $group->first()['account_name'],
-                'amount' => round($group->sum('amount'), 2),
-                'description' => $group->pluck('description')->unique()->implode(', '),
+                'amount'       => round($group->sum('amount'), 2),
+                'description'  => $group->pluck('description')->unique()->implode(', '),
             ];
         })->values()->toArray();
     }
 
     /**
      * Get beginning cash balance for the period.
-     * For the first period, this would be any initial cash entries.
+     * Cumulative sum of cash-related journal entries BEFORE this period.
      */
     private function getBeginningCashBalance(array $cashAccountIds, FiscalPeriod $period): float
     {
-        // Sum of cash-related journal entries BEFORE this period
         $balance = JournalEntryLine::query()
             ->whereIn('account_id', $cashAccountIds)
             ->whereHas('journalEntry', function ($q) use ($period) {
@@ -192,18 +229,18 @@ class CashFlowReportService
     private function emptyResult(FiscalPeriod $period): array
     {
         return [
-            'period' => $period,
-            'operating' => [],
-            'total_operating' => 0,
-            'investing' => [],
-            'total_investing' => 0,
-            'financing' => [],
-            'total_financing' => 0,
-            'net_increase' => 0,
-            'beginning_cash' => 0,
-            'ending_cash' => 0,
+            'period'             => $period,
+            'operating'          => [],
+            'total_operating'    => 0,
+            'investing'          => [],
+            'total_investing'    => 0,
+            'financing'          => [],
+            'total_financing'    => 0,
+            'net_increase'       => 0,
+            'beginning_cash'     => 0,
+            'ending_cash'        => 0,
             'actual_ending_cash' => 0,
-            'is_valid' => true,
+            'is_valid'           => true,
         ];
     }
 }

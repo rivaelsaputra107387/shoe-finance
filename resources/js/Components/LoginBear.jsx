@@ -256,6 +256,17 @@ const LoginBear = forwardRef(function LoginBear({ isCovering = false }, ref) {
                 <ellipse cx="59"  cy="104" rx="9" ry="5" fill="#e8947a" opacity="0.45" />
                 <ellipse cx="101" cy="104" rx="9" ry="5" fill="#e8947a" opacity="0.45" />
 
+                {/* Accountant Visor Hat */}
+                <g>
+                    {/* Head Strap */}
+                    <path d="M 36 66 Q 80 54 124 66" stroke="#1f2937" strokeWidth="4" fill="none" />
+                    {/* Green Visor Brim */}
+                    <path d="M 34 66 Q 80 84 126 66 Q 80 70 34 66" fill="#10b981" stroke="#047857" strokeWidth="1.5" opacity="0.9" />
+                    {/* Gold Badge */}
+                    <circle cx="80" cy="60" r="7.5" fill="#fbbf24" stroke="#d97706" strokeWidth="1.5" />
+                    <text x="80" y="64" fontSize="10" fill="#b45309" textAnchor="middle" fontWeight="bold" fontFamily="monospace">$</text>
+                </g>
+
                 {/* Arms — AFTER head → always in front of face */}
 
                 {/* Left Arm */}

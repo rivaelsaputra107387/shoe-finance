@@ -463,27 +463,27 @@ export default function JournalList({ entries, filters }) {
                                     </div>
 
                                     {/* Desktop View: Group Transactions Table */}
-                                    <div className="hidden md:block overflow-x-auto">
-                                        <table className="w-full text-left border-collapse">
+                                    <div className="hidden md:block">
+                                        <table className="w-full text-left border-collapse table-fixed">
                                             <thead>
                                                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/30 dark:bg-gray-900/30">
-                                                    <th className="py-2.5 px-3 w-8"></th>
-                                                    <th className="py-2.5 px-3 w-32">Referensi</th>
-                                                    <th className="py-2.5 px-3 max-w-[180px]">Keterangan</th>
-                                                    <th className="py-2.5 px-3 min-w-[200px]">Rincian Akun</th>
-                                                    <th className="py-2.5 px-3 w-32 text-right text-emerald-600 dark:text-emerald-400">Debet</th>
-                                                    <th className="py-2.5 px-3 w-32 text-right text-rose-600 dark:text-rose-400">Kredit</th>
-                                                    <th className="py-2.5 px-3 w-28">Status</th>
-                                                    <th className="py-2.5 px-3 w-32 text-right">Aksi</th>
+                                                    <th className="py-2.5 px-2 w-8"></th>
+                                                    <th className="py-2.5 px-2 w-[110px]">Referensi</th>
+                                                    <th className="py-2.5 px-2 w-[150px]">Keterangan</th>
+                                                    <th className="py-2.5 px-2">Rincian Akun</th>
+                                                    <th className="py-2.5 px-2 w-[105px] text-right text-emerald-600 dark:text-emerald-400">Debet</th>
+                                                    <th className="py-2.5 px-2 w-[105px] text-right text-rose-600 dark:text-rose-400">Kredit</th>
+                                                    <th className="py-2.5 px-2 w-[100px]">Status</th>
+                                                    <th className="py-2.5 px-2 w-[100px] text-right">Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-xs">
                                                 {group.items.map((item) => {
                                                     const isSelected = selectedIds.includes(item.id);
                                                     const canSelect = item.status !== 'posted';
-                                                    return (
+                                                        return (
                                                         <tr key={item.id} className={`transition-colors ${isSelected ? 'bg-emerald-50/40 dark:bg-emerald-950/30' : 'hover:bg-gray-50/60 dark:hover:bg-gray-800/40'}`}>
-                                                            <td className="py-2.5 px-3 whitespace-nowrap">
+                                                            <td className="py-2.5 px-2">
                                                                 {canSelect && (
                                                                     <input
                                                                         type="checkbox"
@@ -493,13 +493,13 @@ export default function JournalList({ entries, filters }) {
                                                                     />
                                                                 )}
                                                             </td>
-                                                            <td className="py-2.5 px-3 whitespace-nowrap font-mono font-bold text-gray-900 dark:text-white">
+                                                            <td className="py-2.5 px-2 font-mono font-bold text-gray-900 dark:text-white text-[11px] truncate">
                                                                 {item.reference || '-'}
                                                             </td>
-                                                            <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300 max-w-[180px] truncate" title={item.description}>
+                                                            <td className="py-2.5 px-2 text-gray-700 dark:text-gray-300 truncate" title={item.description}>
                                                                 {item.description}
                                                             </td>
-                                                            <td className="py-2.5 px-3">
+                                                            <td className="py-2.5 px-2">
                                                                 <div className="space-y-1">
                                                                     {item.lines?.map((line) => (
                                                                         <div key={line.id} className={`text-[11px] truncate ${line.credit > 0 ? 'pl-3 text-gray-500' : 'font-medium text-gray-900 dark:text-gray-200'}`}>
@@ -509,7 +509,7 @@ export default function JournalList({ entries, filters }) {
                                                                     ))}
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                                            <td className="py-2.5 px-2 text-right">
                                                                 <div className="space-y-1 font-mono font-semibold tabular-nums text-[11px] text-emerald-600 dark:text-emerald-400">
                                                                     {item.lines?.map((line) => (
                                                                         <div key={line.id}>
@@ -518,7 +518,7 @@ export default function JournalList({ entries, filters }) {
                                                                     ))}
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                                            <td className="py-2.5 px-2 text-right">
                                                                 <div className="space-y-1 font-mono font-semibold tabular-nums text-[11px] text-rose-600 dark:text-rose-400">
                                                                     {item.lines?.map((line) => (
                                                                         <div key={line.id}>
@@ -527,8 +527,8 @@ export default function JournalList({ entries, filters }) {
                                                                     ))}
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2.5 px-3 whitespace-nowrap">
-                                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                                                            <td className="py-2.5 px-2">
+                                                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                                                                     item.status === 'posted'
                                                                         ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                                                                         : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
@@ -538,12 +538,13 @@ export default function JournalList({ entries, filters }) {
                                                                     <span className="capitalize">{item.status}</span>
                                                                 </span>
                                                             </td>
-                                                            <td className="py-2.5 px-3 whitespace-nowrap text-right space-x-1.5">
+                                                            <td className="py-2.5 px-2 text-right">
+                                                                <div className="flex items-center justify-end gap-1">
                                                                 {item.status === 'unapproved' ? (
                                                                     <>
                                                                         <Link
                                                                             href={`/app/journal-entries/${item.id}/edit`}
-                                                                            className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                                                            className="px-2 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors"
                                                                             title="Edit Jurnal"
                                                                         >
                                                                             <FileEdit className="w-3 h-3" />
@@ -553,7 +554,7 @@ export default function JournalList({ entries, filters }) {
                                                                         {isOwnerOrFinance && (
                                                                             <button
                                                                                 onClick={() => promptApprove(item)}
-                                                                                className="px-2.5 py-1 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1 shadow-sm"
+                                                                                className="px-2 py-1 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[11px] font-semibold transition-colors inline-flex items-center gap-1 shadow-sm"
                                                                             >
                                                                                 <Check className="w-3 h-3" />
                                                                                 <span>Approve</span>
@@ -563,13 +564,14 @@ export default function JournalList({ entries, filters }) {
                                                                 ) : (
                                                                     <Link
                                                                         href={`/app/journal-entries/${item.id}`}
-                                                                        className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                                                        className="px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors"
                                                                         title="Lihat Jurnal"
                                                                     >
                                                                         <Eye className="w-3 h-3" />
                                                                         <span>Show</span>
                                                                     </Link>
                                                                 )}
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     );

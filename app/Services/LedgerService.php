@@ -90,6 +90,11 @@ class LedgerService
     /**
      * Get ledger (buku besar) entries for a specific account within a date range.
      *
+     * WARNING: Running balance di method ini dimulai dari 0 (tidak memperhitungkan
+     * saldo kumulatif sebelum startDate). Gunakan generateForAccount() untuk laporan
+     * Buku Besar resmi yang menyertakan saldo awal yang benar.
+     * Method ini hanya untuk query per rentang tanggal tanpa saldo awal.
+     *
      * @return Collection of ['date', 'reference', 'description', 'debit', 'credit', 'balance']
      */
     public function getLedger(int $accountId, ?string $startDate = null, ?string $endDate = null): Collection

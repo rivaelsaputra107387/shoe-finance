@@ -7,6 +7,7 @@ use App\Models\BankMutation;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\AccountBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -57,28 +58,39 @@ class DashboardController extends Controller
         $cashBalanceStats = null;
         if ($isOwnerOrFinance && $period) {
             $cashBalanceStats = Cache::remember('inertia_cash_balance_stats_' . $period->id, 600, function () use ($period) {
-                // Kas & Bank (111x & 112x)
+                // FIX: Gunakan kumulatif (getCumulativeTotalsUpTo) bukan period-only.
+                // Saldo Kas/Bank/Piutang/Hutang adalah saldo akumulasi, bukan mutasi satu periode.
+                $balanceSvc   = new AccountBalanceService();
+                $bulkTotals   = $balanceSvc->getCumulativeTotalsUpTo($period->id);
+
+                // Kas & Bank (111x & 112x) — normal balance Debet
                 $kasBankAccounts = Account::active()
                     ->where(function ($q) {
                         $q->where('code', 'like', '111%')->orWhere('code', 'like', '112%');
                     })
                     ->whereNotNull('parent_id')
                     ->get();
-                $totalKasBank = $kasBankAccounts->sum(fn ($acc) => $acc->getBalanceForPeriod($period->id));
+                $totalKasBank = $kasBankAccounts->sum(
+                    fn ($acc) => $balanceSvc->getBalance($bulkTotals, $acc->id, 'Debet')
+                );
 
-                // Piutang Usaha (113x)
+                // Piutang Usaha (113x) — normal balance Debet
                 $piutangAccounts = Account::active()
                     ->where('code', 'like', '113%')
                     ->whereNotNull('parent_id')
                     ->get();
-                $totalPiutang = $piutangAccounts->sum(fn ($acc) => $acc->getBalanceForPeriod($period->id));
+                $totalPiutang = $piutangAccounts->sum(
+                    fn ($acc) => $balanceSvc->getBalance($bulkTotals, $acc->id, 'Debet')
+                );
 
-                // Hutang (2xxx)
+                // Hutang (2xxx) — normal balance Kredit
                 $hutangAccounts = Account::active()
                     ->where('code', 'like', '2%')
                     ->whereNotNull('parent_id')
                     ->get();
-                $totalHutang = $hutangAccounts->sum(fn ($acc) => abs($acc->getBalanceForPeriod($period->id)));
+                $totalHutang = $hutangAccounts->sum(
+                    fn ($acc) => $balanceSvc->getBalance($bulkTotals, $acc->id, 'Kredit')
+                );
 
                 return [
                     'total_kas_bank' => round($totalKasBank, 2),
@@ -117,13 +129,16 @@ class DashboardController extends Controller
                     $revenueData[] = round($revVal, 2);
 
                     // Expenses (5xxx, 6xxx, 72xx, 8xxx, Debit - Credit)
+                    // FIX: Tambah whereNotNull('parent_id') agar konsisten dengan IncomeStatementService.
+                    // Sebelumnya menggunakan whereNotNull('account_id') yang tidak memfilter akun induk.
                     $expenses = JournalEntryLine::whereHas('account', function ($q) {
-                        $q->where('code', 'like', '5%')
-                          ->orWhere('code', 'like', '6%')
-                          ->orWhere('code', 'like', '72%')
-                          ->orWhere('code', 'like', '8%');
+                        $q->where(function ($inner) {
+                            $inner->where('code', 'like', '5%')
+                                  ->orWhere('code', 'like', '6%')
+                                  ->orWhere('code', 'like', '72%')
+                                  ->orWhere('code', 'like', '8%');
+                        })->whereNotNull('parent_id');
                     })
-                    ->whereNotNull('account_id')
                     ->whereHas('journalEntry', fn ($q) => $q->where('fiscal_period_id', $p->id)->where('status', 'posted')->where('is_closing', false)->whereNull('deleted_at'))
                     ->selectRaw('COALESCE(SUM(debit) - SUM(credit), 0) as balance')
                     ->value('balance');
