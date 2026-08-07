@@ -75,8 +75,14 @@ class BankMutationService
                 ->where('end_date', '>=', $mutation->date)
                 ->first();
 
-            if (!$fiscalPeriod || $fiscalPeriod->status === 'closed') {
-                throw new Exception("Tanggal mutasi berada di luar periode aktif atau periode sudah ditutup.");
+            $dateFormatted = \Carbon\Carbon::parse($mutation->date)->format('d M Y');
+
+            if (!$fiscalPeriod) {
+                throw new Exception("Periode Akuntansi untuk tanggal mutasi ({$dateFormatted}) belum terdaftar di sistem. Silakan tambahkan periode baru terlebih dahulu di menu Master & Pengaturan.");
+            }
+
+            if ($fiscalPeriod->status === 'closed') {
+                throw new Exception("Periode Akuntansi '{$fiscalPeriod->name}' ({$dateFormatted}) sudah ditutup (Closed) sehingga transaksi tidak dapat diproses.");
             }
 
             // Create Journal Entry
