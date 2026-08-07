@@ -8,6 +8,11 @@ use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Services\AccountBalanceService;
+use App\Services\BalanceSheetService;
+use App\Services\CashFlowReportService;
+use App\Services\EquityStatementService;
+use App\Services\IncomeStatementService;
+use App\Services\TrialBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -198,6 +203,65 @@ class DashboardController extends Controller
             });
         }
 
+        // 3b. Financial Report Summary (Owner & Finance only)
+        $financialSummary = null;
+        if ($isOwnerOrFinance && $period) {
+            $cacheKey = 'inertia_financial_summary_' . $period->id;
+            $financialSummary = Cache::remember($cacheKey, 600, function () use ($period) {
+                try {
+                    // Laba Rugi
+                    $is = (new IncomeStatementService())->generate($period->id);
+                    $incomeStatement = [
+                        'total_revenue'  => $is['total_revenue'],
+                        'total_expense'  => $is['total_hpp'] + $is['total_operational_expenses'] + $is['total_other_expenses'] + $is['total_admin_expenses'],
+                        'gross_profit'   => $is['gross_profit'],
+                        'net_profit'     => $is['net_profit'],
+                    ];
+
+                    // Neraca
+                    $bs = (new BalanceSheetService())->generate($period->id);
+                    $balanceSheet = [
+                        'total_assets'       => $bs['total_assets'],
+                        'total_liabilities'  => $bs['total_liabilities'],
+                        'total_equity'       => $bs['total_equity'],
+                        'is_balanced'        => abs($bs['total_assets'] - ($bs['total_liabilities'] + $bs['total_equity'])) < 1,
+                    ];
+
+                    // Arus Kas
+                    $cf = (new CashFlowReportService())->generate($period->id);
+                    $cashFlow = [
+                        'total_operating'  => $cf['total_operating'],
+                        'total_investing'  => $cf['total_investing'],
+                        'total_financing'  => $cf['total_financing'],
+                        'net_increase'     => $cf['net_increase'],
+                        'ending_cash'      => $cf['ending_cash'],
+                    ];
+
+                    // Perubahan Ekuitas
+                    $eq = (new EquityStatementService())->generate($period->id);
+                    $equity = [
+                        'beginning_capital'  => $eq['beginning_capital'],
+                        'net_profit'         => $eq['net_profit'],
+                        'prive'              => $eq['prive'],
+                        'additional_capital' => $eq['additional_capital'],
+                        'ending_capital'     => $eq['ending_capital'],
+                    ];
+
+                    // Neraca Lajur
+                    $tb = (new TrialBalanceService())->generate($period->id);
+                    $trialBalance = [
+                        'total_debit'  => $tb['total_debit'],
+                        'total_credit' => $tb['total_credit'],
+                        'is_balanced'  => $tb['is_balanced'],
+                    ];
+
+                    return compact('incomeStatement', 'balanceSheet', 'cashFlow', 'equity', 'trialBalance');
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            });
+        }
+
         // 4. Recent Journals (Posted)
         $recentJournals = JournalEntry::posted()
             ->with(['lines'])
@@ -245,14 +309,15 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('Dashboard', [
-            'activePeriod'     => $activePeriodStats,
-            'cashBalance'      => $cashBalanceStats,
-            'charts'           => $charts,
-            'recentJournals'   => $recentJournals,
-            'staffWidgets'     => $staffWidgets,
-            'userRole'         => $user->roles->first()?->name ?? 'staff',
-            'periods'          => $allPeriods,
-            'selectedPeriodId' => $period ? $period->id : null,
+            'activePeriod'      => $activePeriodStats,
+            'cashBalance'       => $cashBalanceStats,
+            'charts'            => $charts,
+            'financialSummary'  => $financialSummary,
+            'recentJournals'    => $recentJournals,
+            'staffWidgets'      => $staffWidgets,
+            'userRole'          => $user->roles->first()?->name ?? 'staff',
+            'periods'           => $allPeriods,
+            'selectedPeriodId'  => $period ? $period->id : null,
         ]);
     }
 }

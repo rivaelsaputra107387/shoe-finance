@@ -39,6 +39,7 @@ export default function Dashboard({
     activePeriod,
     cashBalance,
     charts,
+    financialSummary,
     recentJournals,
     staffWidgets,
     userRole,
@@ -457,7 +458,237 @@ export default function Dashboard({
                     </div>
                 )}
 
-                {/* Recent Posted Journals Table */}
+                {/* ─── RINGKASAN LAPORAN KEUANGAN ─── */}
+                {financialSummary && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest whitespace-nowrap">Ringkasan Laporan Keuangan</span>
+                            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                        </div>
+
+                        {/* Row 1: Laba Rugi + Neraca */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                            {/* LABA RUGI */}
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                <div className="flex items-center justify-between mb-5">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                                            Laba Rugi
+                                        </h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{activePeriod?.period_name}</p>
+                                    </div>
+                                    <a href="/app/income-statement" className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Detail →</a>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-gray-500">Total Pendapatan</span>
+                                        <span className="text-sm font-bold text-emerald-600">{formatRupiah(financialSummary.incomeStatement.total_revenue)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-gray-500">Total Beban</span>
+                                        <span className="text-sm font-bold text-rose-600">{formatRupiah(financialSummary.incomeStatement.total_expense)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-gray-500">Laba Kotor</span>
+                                        <span className={`text-sm font-bold ${financialSummary.incomeStatement.gross_profit >= 0 ? 'text-sky-600' : 'text-rose-600'}`}>
+                                            {formatRupiah(financialSummary.incomeStatement.gross_profit)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200">Laba Bersih</span>
+                                        <span className={`text-lg font-extrabold ${
+                                            financialSummary.incomeStatement.net_profit >= 0
+                                                ? 'text-emerald-600'
+                                                : 'text-rose-600'
+                                        }`}>
+                                            {formatRupiah(financialSummary.incomeStatement.net_profit)}
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* Profit margin bar */}
+                                {financialSummary.incomeStatement.total_revenue > 0 && (
+                                    <div className="mt-4">
+                                        <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                            <span>Margin Laba Bersih</span>
+                                            <span className="font-bold">{((financialSummary.incomeStatement.net_profit / financialSummary.incomeStatement.total_revenue) * 100).toFixed(1)}%</span>
+                                        </div>
+                                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+                                            <div
+                                                className={`h-1.5 rounded-full transition-all ${
+                                                    financialSummary.incomeStatement.net_profit >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
+                                                }`}
+                                                style={{ width: `${Math.min(Math.abs((financialSummary.incomeStatement.net_profit / financialSummary.incomeStatement.total_revenue) * 100), 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* NERACA */}
+                            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                <div className="flex items-center justify-between mb-5">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                                            Neraca
+                                        </h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{activePeriod?.period_name}</p>
+                                    </div>
+                                    <a href="/app/balance-sheet" className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Detail →</a>
+                                </div>
+                                <div className="space-y-3 mb-4">
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-gray-500">Total Aset</span>
+                                        <span className="text-sm font-bold text-blue-600">{formatRupiah(financialSummary.balanceSheet.total_assets)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-xs text-gray-500">Total Kewajiban</span>
+                                        <span className="text-sm font-bold text-rose-600">{formatRupiah(financialSummary.balanceSheet.total_liabilities)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2">
+                                        <span className="text-xs text-gray-500">Total Ekuitas</span>
+                                        <span className="text-sm font-bold text-violet-600">{formatRupiah(financialSummary.balanceSheet.total_equity)}</span>
+                                    </div>
+                                </div>
+                                {/* Aset breakdown bar */}
+                                {financialSummary.balanceSheet.total_assets > 0 && (
+                                    <div className="mt-2 space-y-1.5">
+                                        <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-2">Komposisi Kewajiban + Ekuitas</div>
+                                        <div className="w-full h-3 rounded-full overflow-hidden flex">
+                                            <div
+                                                className="bg-rose-400 h-full transition-all"
+                                                style={{ width: `${(financialSummary.balanceSheet.total_liabilities / financialSummary.balanceSheet.total_assets * 100).toFixed(1)}%` }}
+                                                title={`Kewajiban: ${((financialSummary.balanceSheet.total_liabilities / financialSummary.balanceSheet.total_assets) * 100).toFixed(1)}%`}
+                                            />
+                                            <div
+                                                className="bg-violet-400 h-full flex-1 transition-all"
+                                                title={`Ekuitas: ${((financialSummary.balanceSheet.total_equity / financialSummary.balanceSheet.total_assets) * 100).toFixed(1)}%`}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-gray-400">
+                                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />Kewajiban {((financialSummary.balanceSheet.total_liabilities / financialSummary.balanceSheet.total_assets) * 100).toFixed(0)}%</span>
+                                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-400 inline-block" />Ekuitas {((financialSummary.balanceSheet.total_equity / financialSummary.balanceSheet.total_assets) * 100).toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className={`mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
+                                    financialSummary.balanceSheet.is_balanced
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                        : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
+                                }`}>
+                                    {financialSummary.balanceSheet.is_balanced ? '✓ Neraca Seimbang' : '⚠ Neraca Tidak Seimbang'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Arus Kas + Ekuitas + Neraca Lajur */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                            {/* ARUS KAS */}
+                            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" />
+                                        Arus Kas
+                                    </h3>
+                                    <a href="/app/cash-flow-statement" className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Detail →</a>
+                                </div>
+                                <div className="space-y-2.5">
+                                    {[
+                                        { label: 'Operasi', value: financialSummary.cashFlow.total_operating, color: 'emerald' },
+                                        { label: 'Investasi', value: financialSummary.cashFlow.total_investing, color: 'blue' },
+                                        { label: 'Pendanaan', value: financialSummary.cashFlow.total_financing, color: 'violet' },
+                                    ].map(({ label, value, color }) => (
+                                        <div key={label} className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-800">
+                                            <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                                                <span className={`w-1.5 h-1.5 rounded-full bg-${color}-500 inline-block`} />
+                                                {label}
+                                            </span>
+                                            <span className={`text-xs font-bold ${value >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {value >= 0 ? '+' : ''}{formatRupiah(value)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Kas Akhir</span>
+                                        <span className="text-sm font-extrabold text-cyan-600">{formatRupiah(financialSummary.cashFlow.ending_cash)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* PERUBAHAN EKUITAS */}
+                            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-violet-500 inline-block" />
+                                        Perubahan Ekuitas
+                                    </h3>
+                                    <a href="/app/equity-statement" className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Detail →</a>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-gray-500">Modal Awal</span>
+                                        <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRupiah(financialSummary.equity.beginning_capital)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-gray-500">+ Laba Bersih</span>
+                                        <span className={`font-semibold ${financialSummary.equity.net_profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {financialSummary.equity.net_profit >= 0 ? '+' : ''}{formatRupiah(financialSummary.equity.net_profit)}
+                                        </span>
+                                    </div>
+                                    {financialSummary.equity.prive > 0 && (
+                                        <div className="flex justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800">
+                                            <span className="text-gray-500">- Prive</span>
+                                            <span className="font-semibold text-rose-600">−{formatRupiah(financialSummary.equity.prive)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-xs pt-2">
+                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200">Modal Akhir</span>
+                                        <span className="text-sm font-extrabold text-violet-600">{formatRupiah(financialSummary.equity.ending_capital)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* NERACA LAJUR */}
+                            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                                        Neraca Lajur
+                                    </h3>
+                                    <a href="/app/trial-balance" className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Detail →</a>
+                                </div>
+                                <div className="flex flex-col items-center justify-center py-3 gap-3">
+                                    <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black border-4 ${
+                                        financialSummary.trialBalance.is_balanced
+                                            ? 'border-emerald-400 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40'
+                                            : 'border-rose-400 bg-rose-50 text-rose-600 dark:bg-rose-950/40'
+                                    }`}>
+                                        {financialSummary.trialBalance.is_balanced ? '✓' : '!'}
+                                    </div>
+                                    <p className={`text-sm font-bold ${
+                                        financialSummary.trialBalance.is_balanced ? 'text-emerald-600' : 'text-rose-600'
+                                    }`}>
+                                        {financialSummary.trialBalance.is_balanced ? 'Neraca Seimbang' : 'Tidak Seimbang'}
+                                    </p>
+                                </div>
+                                <div className="space-y-2 mt-1">
+                                    <div className="flex justify-between text-xs py-1.5 border-b border-gray-100 dark:border-gray-800">
+                                        <span className="text-gray-500">Total Debit</span>
+                                        <span className="font-bold text-gray-800 dark:text-gray-200">{formatRupiah(financialSummary.trialBalance.total_debit)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs py-1.5">
+                                        <span className="text-gray-500">Total Kredit</span>
+                                        <span className="font-bold text-gray-800 dark:text-gray-200">{formatRupiah(financialSummary.trialBalance.total_credit)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden space-y-4">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
                         <div>
