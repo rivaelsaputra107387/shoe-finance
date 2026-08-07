@@ -16,6 +16,7 @@ import {
     PieChart as PieChartIcon,
     BarChart3,
     Sparkles,
+    Activity,
 } from 'lucide-react';
 import CustomSelect from '@/Components/CustomSelect';
 import {
@@ -143,7 +144,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Top Summary Cards (Periode & Stats) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {/* Active Period Card */}
                     <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden">
                         <div className="flex items-center justify-between">
@@ -185,11 +186,60 @@ export default function Dashboard({
                                     <h3 className="text-xl font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                         {formatRupiah(cashBalance.total_kas_bank)}
                                     </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Saldo Tunai + Rekening Bank
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1 font-medium">
+                                        Bulan lalu: {formatRupiah(cashBalance.prev_kas_bank)}
+                                        {cashBalance.prev_kas_bank > 0 && (
+                                            <span className={cashBalance.total_kas_bank >= cashBalance.prev_kas_bank ? 'text-emerald-500' : 'text-rose-500'}>
+                                                ({cashBalance.total_kas_bank >= cashBalance.prev_kas_bank ? '↑' : '↓'} {Math.abs((cashBalance.total_kas_bank - cashBalance.prev_kas_bank) / cashBalance.prev_kas_bank * 100).toFixed(1)}%)
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Total Pendapatan */}
+                            {financialSummary && (
+                                <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Total Pendapatan
+                                        </span>
+                                        <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-3">
+                                        <h3 className="text-xl font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                            {formatRupiah(financialSummary.incomeStatement.total_revenue)}
+                                        </h3>
+                                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 font-medium">
+                                            Rata-rata: <span className="text-gray-700 dark:text-gray-300">{formatRupiah(financialSummary.incomeStatement.total_revenue / activePeriod.days_passed)}</span> / hari
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Laba Bersih */}
+                            {financialSummary && (
+                                <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Laba Bersih
+                                        </span>
+                                        <div className="p-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-600">
+                                            <Activity className="w-5 h-5" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-3">
+                                        <h3 className="text-xl font-mono font-bold text-violet-600 dark:text-violet-400">
+                                            {formatRupiah(financialSummary.incomeStatement.net_profit)}
+                                        </h3>
+                                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 font-medium">
+                                            Rata-rata: <span className="text-gray-700 dark:text-gray-300">{formatRupiah(financialSummary.incomeStatement.net_profit / activePeriod.days_passed)}</span> / hari
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Piutang Usaha */}
                             <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -205,8 +255,13 @@ export default function Dashboard({
                                     <h3 className="text-xl font-mono font-bold text-sky-600 dark:text-sky-400">
                                         {formatRupiah(cashBalance.total_piutang)}
                                     </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Uang Masuk Tertunda
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1 font-medium">
+                                        Bulan lalu: {formatRupiah(cashBalance.prev_piutang)}
+                                        {cashBalance.prev_piutang > 0 && (
+                                            <span className={cashBalance.total_piutang >= cashBalance.prev_piutang ? 'text-emerald-500' : 'text-rose-500'}>
+                                                ({cashBalance.total_piutang >= cashBalance.prev_piutang ? '↑' : '↓'} {Math.abs((cashBalance.total_piutang - cashBalance.prev_piutang) / cashBalance.prev_piutang * 100).toFixed(1)}%)
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -225,8 +280,13 @@ export default function Dashboard({
                                     <h3 className="text-xl font-mono font-bold text-rose-600 dark:text-rose-400">
                                         {formatRupiah(cashBalance.total_hutang)}
                                     </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Kewajiban Jangka Pendek
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 flex items-center gap-1 font-medium">
+                                        Bulan lalu: {formatRupiah(cashBalance.prev_hutang)}
+                                        {cashBalance.prev_hutang > 0 && (
+                                            <span className={cashBalance.total_hutang <= cashBalance.prev_hutang ? 'text-emerald-500' : 'text-rose-500'}>
+                                                ({cashBalance.total_hutang >= cashBalance.prev_hutang ? '↑' : '↓'} {Math.abs((cashBalance.total_hutang - cashBalance.prev_hutang) / cashBalance.prev_hutang * 100).toFixed(1)}%)
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                             </div>

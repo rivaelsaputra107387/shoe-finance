@@ -51,12 +51,27 @@ class DashboardController extends Controller
         }
         $journalCount = $journalQuery->count();
 
+        $daysPassed = 1;
+        if ($period) {
+            $start = \Carbon\Carbon::parse($period->start_date);
+            $end = \Carbon\Carbon::parse($period->end_date);
+            $today = \Carbon\Carbon::today();
+            if ($today->lt($start)) {
+                $daysPassed = 1;
+            } elseif ($today->gt($end)) {
+                $daysPassed = $start->diffInDays($end) + 1;
+            } else {
+                $daysPassed = $start->diffInDays($today) + 1;
+            }
+        }
+
         $activePeriodStats = [
             'period_name'   => $period?->name ?? 'Tidak Ada Periode Aktif',
             'start_date'    => $period?->start_date?->format('d M Y') ?? '-',
             'end_date'      => $period?->end_date?->format('d M Y') ?? '-',
             'journal_count' => $journalCount,
             'is_open'       => $period?->status === 'open',
+            'days_passed'   => max(1, $daysPassed),
         ];
 
         // 2. Cash & Balance Stats (Owner & Finance)
@@ -97,10 +112,26 @@ class DashboardController extends Controller
                     fn ($acc) => $balanceSvc->getBalance($bulkTotals, $acc->id, 'Kredit')
                 );
 
+                // Previous Period Data
+                $prevPeriod = FiscalPeriod::where('start_date', '<', $period->start_date)->orderByDesc('start_date')->first();
+                $prevTotalKasBank = 0;
+                $prevTotalPiutang = 0;
+                $prevTotalHutang = 0;
+
+                if ($prevPeriod) {
+                    $prevBulkTotals = $balanceSvc->getCumulativeTotalsUpTo($prevPeriod->id);
+                    $prevTotalKasBank = $kasBankAccounts->sum(fn ($acc) => $balanceSvc->getBalance($prevBulkTotals, $acc->id, 'Debet'));
+                    $prevTotalPiutang = $piutangAccounts->sum(fn ($acc) => $balanceSvc->getBalance($prevBulkTotals, $acc->id, 'Debet'));
+                    $prevTotalHutang = $hutangAccounts->sum(fn ($acc) => $balanceSvc->getBalance($prevBulkTotals, $acc->id, 'Kredit'));
+                }
+
                 return [
                     'total_kas_bank' => round($totalKasBank, 2),
                     'total_piutang'  => round($totalPiutang, 2),
                     'total_hutang'   => round($totalHutang, 2),
+                    'prev_kas_bank'  => round($prevTotalKasBank, 2),
+                    'prev_piutang'   => round($prevTotalPiutang, 2),
+                    'prev_hutang'    => round($prevTotalHutang, 2),
                 ];
             });
         }
