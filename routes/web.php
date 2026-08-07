@@ -60,6 +60,9 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/bank-mutations/bulk-match-api', [BankMutationController::class, 'bulkMatchApi'])->name('bank-mutations.bulk-match-api');
     Route::post('/bank-mutations/bulk-delete', [BankMutationController::class, 'bulkDelete'])->name('bank-mutations.bulk-delete');
 
+    Route::get('/transaction-archive', [BankMutationController::class, 'archive'])->name('transaction-archive.index');
+
+
     Route::get('/draft-journals', [JournalEntryController::class, 'draftJournals'])->name('draft-journals.index');
 
     // Laporan Keuangan

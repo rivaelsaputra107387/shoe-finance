@@ -23,6 +23,7 @@ import {
     CheckCircle2,
     AlertCircle,
     X,
+    Archive,
     ChevronDown,
     Menu,
 } from 'lucide-react';
@@ -64,6 +65,7 @@ export default function AppLayout({ children, title }) {
                 { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: true },
                 { name: 'Draft Jurnal', href: '/app/draft-journals', icon: BookOpen, show: true },
                 { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
+                { name: 'Arsip Transaksi', href: '/app/transaction-archive', icon: Archive, show: true },
             ].filter(i => i.show),
         },
         {

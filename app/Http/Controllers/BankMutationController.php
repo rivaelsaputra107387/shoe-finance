@@ -15,6 +15,7 @@ class BankMutationController extends Controller
     public function index(Request $request): Response
     {
         $query = BankMutation::with(['uploader', 'journalEntry'])
+            ->whereNotIn('status', ['posted'])
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc');
 
@@ -48,6 +49,42 @@ class BankMutationController extends Controller
         return Inertia::render('Transactions/BankMutations', [
             'mutations' => $mutations,
             'filters'   => $request->only(['bank_source', 'status', 'mutation_type', 'date_preset', 'start_date', 'end_date', 'search']),
+        ]);
+    }
+
+    public function archive(Request $request): Response
+    {
+        $query = BankMutation::with(['uploader', 'journalEntry', 'poster'])
+            ->where('status', 'posted')
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($request->filled('bank_source')) {
+            $query->where('bank_source', $request->bank_source);
+        }
+
+        if ($request->filled('mutation_type')) {
+            $query->where('mutation_type', $request->mutation_type);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('date', '<=', $request->end_date);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('description', 'like', "%{$search}%");
+        }
+
+        $mutations = $query->paginate(25)->withQueryString();
+
+        return Inertia::render('Transactions/TransactionArchive', [
+            'mutations' => $mutations,
+            'filters'   => $request->only(['bank_source', 'mutation_type', 'date_preset', 'start_date', 'end_date', 'search']),
         ]);
     }
 
@@ -217,5 +254,16 @@ class BankMutationController extends Controller
         }
 
         return back()->with('success', "Berhasil menghapus {$count} data mutasi bank.");
+    }
+
+    public function destroy(BankMutation $bankMutation)
+    {
+        if ($bankMutation->status === 'posted') {
+            return back()->with('error', 'Transaksi yang sudah diarsipkan (Jurnal Final) tidak dapat dihapus.');
+        }
+
+        $bankMutation->delete();
+
+        return back()->with('success', 'Transaksi berhasil dihapus.');
     }
 }
