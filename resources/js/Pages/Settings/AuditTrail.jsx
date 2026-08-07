@@ -11,11 +11,13 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
     const [userId, setUserId] = useState(filters.user_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [datePreset, setDatePreset] = useState(
+        filters.start_date || filters.end_date ? 'custom' : 'all'
+    );
 
     const [activeRecord, setActiveRecord] = useState(null);
     const [showRawJson, setShowRawJson] = useState(false);
 
-    // Initial mount flag to prevent unnecessary double request
     const isInitialMount = useRef(true);
 
     const executeFilter = (params) => {
@@ -42,6 +44,35 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
         return () => clearTimeout(timer);
     }, [search, tableName, action, userId, startDate, endDate]);
 
+    const handlePresetChange = (preset) => {
+        setDatePreset(preset);
+        const today = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        if (preset === 'all') {
+            setStartDate('');
+            setEndDate('');
+        } else if (preset === 'today') {
+            const str = formatDate(today);
+            setStartDate(str);
+            setEndDate(str);
+        } else if (preset === 'last_7_days') {
+            const past = new Date(today);
+            past.setDate(past.getDate() - 7);
+            setStartDate(formatDate(past));
+            setEndDate(formatDate(today));
+        } else if (preset === 'this_month') {
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            setStartDate(formatDate(firstDay));
+            setEndDate(formatDate(today));
+        } else if (preset === 'last_month') {
+            const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+            setStartDate(formatDate(firstDay));
+            setEndDate(formatDate(lastDay));
+        }
+    };
+
     const handleResetFilters = () => {
         setSearch('');
         setTableName('');
@@ -49,6 +80,7 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
         setUserId('');
         setStartDate('');
         setEndDate('');
+        setDatePreset('all');
         router.get('/app/audit-trail', {}, { preserveState: true, replace: true });
     };
 
@@ -67,7 +99,7 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
         }
     };
 
-    const hasActiveFilters = search || tableName || action || userId || startDate || endDate;
+    const hasActiveFilters = search || tableName || action || userId || startDate || endDate || datePreset !== 'all';
 
     return (
         <AppLayout title="Audit Trail Keamanan">
@@ -101,11 +133,11 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                         {/* 1. Search Bar */}
-                        <div className="lg:col-span-2 relative">
+                        <div className="relative">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                Cari Kata Kunci / Subjek
+                                Cari Kata Kunci
                             </label>
                             <div className="relative">
                                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -113,7 +145,7 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Cari deskripsi, referensi, atau user..."
+                                    placeholder="Cari deskripsi, referensi, user..."
                                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-emerald-500 focus:border-emerald-500"
                                 />
                                 {search && (
@@ -179,32 +211,50 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
                             </CustomSelect>
                         </div>
 
-                        {/* 5. Range Tanggal */}
-                        <div className="grid grid-cols-2 gap-1.5 lg:col-span-1">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">
-                                    Dari
-                                </label>
+                        {/* 5. Single Date Range Dropdown */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Rentang Tanggal
+                            </label>
+                            <CustomSelect
+                                value={datePreset}
+                                onChange={(e) => handlePresetChange(e.target.value)}
+                                className="w-full text-xs"
+                            >
+                                <option value="all">📅 Semua Waktu</option>
+                                <option value="today">Hari Ini</option>
+                                <option value="last_7_days">7 Hari Terakhir</option>
+                                <option value="this_month">Bulan Ini</option>
+                                <option value="last_month">Bulan Lalu</option>
+                                <option value="custom">Kustom Tanggal...</option>
+                            </CustomSelect>
+                        </div>
+                    </div>
+
+                    {/* Expandable Custom Date Pickers (Only visible when 'Kustom Tanggal...' is active) */}
+                    {datePreset === 'custom' && (
+                        <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-3 text-xs animate-in fade-in">
+                            <div className="flex items-center gap-2 text-gray-500 font-semibold">
+                                <Calendar className="w-4 h-4 text-emerald-600" />
+                                <span>Pilih Rentang Tanggal Kustom:</span>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-2 text-[11px]"
+                                    className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-1.5 text-xs focus:ring-emerald-500 focus:border-emerald-500"
                                 />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">
-                                    Sampai
-                                </label>
+                                <span className="text-gray-400">s/d</span>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-2 text-[11px]"
+                                    className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-1.5 text-xs focus:ring-emerald-500 focus:border-emerald-500"
                                 />
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Audit Table */}
