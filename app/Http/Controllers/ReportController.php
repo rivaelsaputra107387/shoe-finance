@@ -137,6 +137,15 @@ class ReportController extends Controller
         ]);
     }
 
+    private function generateFilename(string $reportTitle, string $periodName, string $ext, ?string $extra = null): string
+    {
+        $cleanTitle  = str_replace([' ', '/', '\\', ':'], '_', trim($reportTitle));
+        $cleanPeriod = str_replace([' ', '/', '\\', ':'], '_', trim($periodName));
+        $cleanExtra  = $extra ? '_' . str_replace([' ', '/', '\\', ':'], '_', trim($extra)) : '';
+
+        return "{$cleanTitle}{$cleanExtra}_{$cleanPeriod}.{$ext}";
+    }
+
     public function exportGeneralLedger(Request $request)
     {
         $accountId = $request->input('account_id');
@@ -152,12 +161,16 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $ledgerData['period_name'] = $periodName;
 
+        $account = Account::find($accountId);
+        $accountInfo = $account ? ($account->code . '_' . $account->name) : '';
+        $filename = $this->generateFilename('Laporan_Buku_Besar', $periodName, $format === 'excel' ? 'xlsx' : 'pdf', $accountInfo);
+
         if ($format === 'excel') {
-            return Excel::download(new GeneralLedgerExport($ledgerData, $periodName), 'Buku_Besar_' . time() . '.xlsx');
+            return Excel::download(new GeneralLedgerExport($ledgerData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.general-ledger-pdf', ['data' => $ledgerData])->setPaper('a4', 'landscape');
-        return $pdf->download('Buku_Besar_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function exportTrialBalance(Request $request)
@@ -172,12 +185,14 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $reportData['period_name'] = $periodName;
 
+        $filename = $this->generateFilename('Laporan_Neraca_Lajur', $periodName, $format === 'excel' ? 'xlsx' : 'pdf');
+
         if ($format === 'excel') {
-            return Excel::download(new TrialBalanceExport($reportData, $periodName), 'Neraca_Saldo_' . time() . '.xlsx');
+            return Excel::download(new TrialBalanceExport($reportData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.trial-balance-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
-        return $pdf->download('Neraca_Saldo_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function exportIncomeStatement(Request $request)
@@ -192,12 +207,14 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $reportData['period_name'] = $periodName;
 
+        $filename = $this->generateFilename('Laporan_Laba_Rugi', $periodName, $format === 'excel' ? 'xlsx' : 'pdf');
+
         if ($format === 'excel') {
-            return Excel::download(new IncomeStatementExport($reportData, $periodName), 'Laba_Rugi_' . time() . '.xlsx');
+            return Excel::download(new IncomeStatementExport($reportData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.income-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
-        return $pdf->download('Laba_Rugi_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function exportBalanceSheet(Request $request)
@@ -212,12 +229,14 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $reportData['period_name'] = $periodName;
 
+        $filename = $this->generateFilename('Laporan_Neraca', $periodName, $format === 'excel' ? 'xlsx' : 'pdf');
+
         if ($format === 'excel') {
-            return Excel::download(new BalanceSheetExport($reportData, $periodName), 'Neraca_' . time() . '.xlsx');
+            return Excel::download(new BalanceSheetExport($reportData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.balance-sheet-pdf', ['data' => $reportData])->setPaper('a4', 'landscape');
-        return $pdf->download('Neraca_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function exportEquityStatement(Request $request)
@@ -232,12 +251,14 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $reportData['period_name'] = $periodName;
 
+        $filename = $this->generateFilename('Laporan_Perubahan_Ekuitas', $periodName, $format === 'excel' ? 'xlsx' : 'pdf');
+
         if ($format === 'excel') {
-            return Excel::download(new EquityStatementExport($reportData, $periodName), 'Perubahan_Modal_' . time() . '.xlsx');
+            return Excel::download(new EquityStatementExport($reportData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.equity-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
-        return $pdf->download('Perubahan_Modal_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function exportCashFlow(Request $request)
@@ -252,11 +273,13 @@ class ReportController extends Controller
         $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
         $reportData['period_name'] = $periodName;
 
+        $filename = $this->generateFilename('Laporan_Arus_Kas', $periodName, $format === 'excel' ? 'xlsx' : 'pdf');
+
         if ($format === 'excel') {
-            return Excel::download(new CashFlowExport($reportData, $periodName), 'Arus_Kas_' . time() . '.xlsx');
+            return Excel::download(new CashFlowExport($reportData, $periodName), $filename);
         }
 
         $pdf = Pdf::loadView('reports.cash-flow-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
-        return $pdf->download('Arus_Kas_' . time() . '.pdf');
+        return $pdf->download($filename);
     }
 }
