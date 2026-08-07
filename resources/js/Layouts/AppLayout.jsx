@@ -95,16 +95,16 @@ export default function AppLayout({ children, title }) {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans antialiased flex flex-col">
             {/* Flash Notifications */}
             {flash?.success && (
-                <div className="fixed top-4 right-4 z-50 flex items-center p-4 mb-4 text-emerald-800 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-lg animate-in slide-in-from-top-2">
-                    <CheckCircle2 className="w-5 h-5 mr-3 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <div className="text-sm font-medium">{flash.success}</div>
+                <div className="fixed top-4 right-4 z-[100] max-w-md flex items-start p-4 text-emerald-800 rounded-xl bg-emerald-50 dark:bg-emerald-950/90 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xl animate-in slide-in-from-top-2">
+                    <CheckCircle2 className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <div className="text-sm font-medium leading-relaxed">{flash.success}</div>
                 </div>
             )}
 
             {flash?.error && (
-                <div className="fixed top-4 right-4 z-50 flex items-center p-4 mb-4 text-rose-800 rounded-xl bg-rose-50 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shadow-lg animate-in slide-in-from-top-2">
-                    <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 text-rose-600 dark:text-rose-400" />
-                    <div className="text-sm font-medium">{flash.error}</div>
+                <div className="fixed top-4 right-4 z-[100] max-w-md flex items-start p-4 text-rose-800 rounded-xl bg-rose-50 dark:bg-rose-950/90 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shadow-xl animate-in slide-in-from-top-2">
+                    <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 text-rose-600 dark:text-rose-400" />
+                    <div className="text-sm font-medium leading-relaxed">{flash.error}</div>
                 </div>
             )}
 
