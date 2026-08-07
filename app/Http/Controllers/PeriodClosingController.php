@@ -16,8 +16,8 @@ class PeriodClosingController extends Controller
     public function index(): Response
     {
         $user = auth()->user();
-        if (!$user->hasRole('owner')) {
-            abort(403, 'Akses ditolak: Hanya Owner yang dapat mengakses Penutupan Periode.');
+        if (!$user->hasAnyRole(['owner', 'finance'])) {
+            abort(403, 'Akses ditolak: Hanya Owner & Finance yang dapat mengakses Penutupan Periode.');
         }
 
         $activePeriod = FiscalPeriod::active();
@@ -64,8 +64,8 @@ class PeriodClosingController extends Controller
     public function execute(Request $request)
     {
         $user = auth()->user();
-        if (!$user->hasRole('owner')) {
-            abort(403, 'Akses ditolak: Hanya Owner yang dapat menutup periode.');
+        if (!$user->hasAnyRole(['owner', 'finance'])) {
+            abort(403, 'Akses ditolak: Hanya Owner & Finance yang dapat menutup periode.');
         }
 
         $request->validate([

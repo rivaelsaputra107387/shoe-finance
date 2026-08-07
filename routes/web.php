@@ -92,16 +92,16 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/fiscal-periods', [MasterController::class, 'storeFiscalPeriod'])->name('master.fiscal-periods.store');
     Route::put('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'updateFiscalPeriod'])->name('master.fiscal-periods.update');
 
-    // Penutupan Periode (Owner Only - enforced at route level)
-    Route::middleware(['role:owner'])->group(function () {
+    // Penutupan Periode (Owner & Finance)
+    Route::middleware(['role:owner|finance'])->group(function () {
         Route::get('/period-closing', [PeriodClosingController::class, 'index'])->name('period-closing.index');
         Route::post('/period-closing/execute', [PeriodClosingController::class, 'execute'])->name('period-closing.execute');
     });
 
     Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('audit-trail.index');
 
-    // Manajemen Akun (Owner Only)
-    Route::middleware(['role:owner'])->group(function () {
+    // Manajemen Akun (Owner & Finance)
+    Route::middleware(['role:owner|finance'])->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');

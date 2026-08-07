@@ -38,6 +38,13 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $authUser = auth()->user();
+        $isFinanceOnly = $authUser->hasRole('finance') && !$authUser->hasRole('owner');
+
+        if ($isFinanceOnly && strtolower($request->role) !== 'staff') {
+            return back()->with('error', 'Akses ditolak: User Finance hanya dapat menambahkan akun dengan role Staff.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -62,6 +69,13 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $authUser = auth()->user();
+        $isFinanceOnly = $authUser->hasRole('finance') && !$authUser->hasRole('owner');
+
+        if ($isFinanceOnly && ($user->hasRole('owner') || $user->hasRole('finance') || strtolower($request->role) !== 'staff')) {
+            return back()->with('error', 'Akses ditolak: User Finance hanya diperbolehkan mengelola/mengedit akun dengan role Staff.');
+        }
+
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat mengedit akun Anda sendiri melalui halaman ini. Silakan gunakan menu Edit Profil.');
         }
@@ -95,6 +109,13 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $authUser = auth()->user();
+        $isFinanceOnly = $authUser->hasRole('finance') && !$authUser->hasRole('owner');
+
+        if ($isFinanceOnly && ($user->hasRole('owner') || $user->hasRole('finance'))) {
+            return back()->with('error', 'Akses ditolak: User Finance hanya diperbolehkan menghapus akun dengan role Staff.');
+        }
+
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }

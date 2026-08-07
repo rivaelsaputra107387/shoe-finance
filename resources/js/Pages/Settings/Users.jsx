@@ -8,6 +8,9 @@ import { formatPhone } from '@/Utils/format';
 
 export default function Users({ users, roles, filters }) {
     const { auth } = usePage().props;
+    const userRoles = auth?.user?.roles || [];
+    const isFinanceOnly = userRoles.includes('finance') && !userRoles.includes('owner');
+
     const [search, setSearch] = useState(filters?.search || '');
     const [role, setRole] = useState(filters?.role || '');
 
@@ -32,6 +35,9 @@ export default function Users({ users, roles, filters }) {
     const handleAdd = () => {
         setEditMode(false);
         reset();
+        if (isFinanceOnly) {
+            setData('role', 'staff');
+        }
         clearErrors();
         setModalOpen(true);
     };
@@ -182,22 +188,28 @@ export default function Users({ users, roles, filters }) {
                                             </td>
                                             <td className="py-3 px-4 text-right">
                                                 {user.id !== auth.user.id ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            onClick={() => handleEdit(user)}
-                                                            className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <Pencil className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteClick(user)}
-                                                            className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                                                            title="Hapus"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                    (!isFinanceOnly || user.roles.some(r => r.name === 'staff')) ? (
+                                                        <div className="flex justify-end gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(user)}
+                                                                className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                                                                title="Edit"
+                                                            >
+                                                                <Pencil className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteClick(user)}
+                                                                className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                                                                title="Hapus"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end">
+                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">Akses Terbatas</span>
+                                                        </div>
+                                                    )
                                                 ) : (
                                                     <div className="flex justify-end">
                                                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">Anda (Diri Sendiri)</span>
@@ -270,15 +282,27 @@ export default function Users({ users, roles, filters }) {
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Role</label>
                                 <select
                                     required
-                                    value={data.role}
+                                    disabled={isFinanceOnly}
+                                    value={isFinanceOnly ? 'staff' : data.role}
                                     onChange={e => setData('role', e.target.value)}
-                                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:ring-emerald-500 capitalize"
+                                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:ring-emerald-500 capitalize disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                    <option value="">Pilih Role...</option>
-                                    {roles.filter(r => r.toLowerCase() !== 'owner').map(r => (
-                                        <option key={r} value={r}>{r}</option>
-                                    ))}
+                                    {isFinanceOnly ? (
+                                        <option value="staff">staff</option>
+                                    ) : (
+                                        <>
+                                            <option value="">Pilih Role...</option>
+                                            {roles.filter(r => r.toLowerCase() !== 'owner').map(r => (
+                                                <option key={r} value={r}>{r}</option>
+                                            ))}
+                                        </>
+                                    )}
                                 </select>
+                                {isFinanceOnly && (
+                                    <p className="text-[10px] text-gray-400 mt-1 italic">
+                                        * User Finance hanya diperbolehkan mengelola akun dengan role Staff.
+                                    </p>
+                                )}
                                 {errors.role && <p className="text-rose-500 text-xs mt-1">{errors.role}</p>}
                             </div>
                             <div className="pt-2">
