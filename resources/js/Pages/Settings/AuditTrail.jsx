@@ -1,24 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
-import { ShieldCheck, Eye, Filter, Database, User, Clock, ChevronLeft, ChevronRight, ArrowRight, FileText, Code } from 'lucide-react';
+import { ShieldCheck, Eye, Search, User, Calendar, X, FileText, Code, RotateCcw } from 'lucide-react';
 
-export default function AuditTrail({ auditTrails, selectedTable, selectedAction }) {
-    const [tableFilter, setTableFilter] = useState(selectedTable || '');
-    const [actionFilter, setActionFilter] = useState(selectedAction || '');
+export default function AuditTrail({ auditTrails, usersList = [], filters = {} }) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [tableName, setTableName] = useState(filters.table_name || '');
+    const [action, setAction] = useState(filters.action || '');
+    const [userId, setUserId] = useState(filters.user_id || '');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+
     const [activeRecord, setActiveRecord] = useState(null);
     const [showRawJson, setShowRawJson] = useState(false);
 
-    const handleFilter = () => {
-        router.get('/app/audit-trail', {
-            table_name: tableFilter,
-            action: actionFilter,
-        }, { preserveState: true, replace: true });
+    // Initial mount flag to prevent unnecessary double request
+    const isInitialMount = useRef(true);
+
+    const executeFilter = (params) => {
+        router.get('/app/audit-trail', params, { preserveState: true, replace: true });
     };
 
-    const getActionBadge = (action) => {
-        switch (action) {
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            executeFilter({
+                search,
+                table_name: tableName,
+                action,
+                user_id: userId,
+                start_date: startDate,
+                end_date: endDate,
+            });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search, tableName, action, userId, startDate, endDate]);
+
+    const handleResetFilters = () => {
+        setSearch('');
+        setTableName('');
+        setAction('');
+        setUserId('');
+        setStartDate('');
+        setEndDate('');
+        router.get('/app/audit-trail', {}, { preserveState: true, replace: true });
+    };
+
+    const getActionBadge = (actionType) => {
+        switch (actionType) {
             case 'create':
                 return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">Tambah Baru</span>;
             case 'update':
@@ -28,9 +63,11 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
             case 'close_period':
                 return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800">Tutup Buku</span>;
             default:
-                return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300">{action?.toUpperCase()}</span>;
+                return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300">{actionType?.toUpperCase()}</span>;
         }
     };
+
+    const hasActiveFilters = search || tableName || action || userId || startDate || endDate;
 
     return (
         <AppLayout title="Audit Trail Keamanan">
@@ -43,55 +80,130 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                         Log Audit Trail Sistem
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Riwayat aktivitas, pembuatan, pengubahan, dan penghapusan data oleh pengguna dalam bahasa yang mudah dipahami.
+                        Riwayat aktivitas, pembuatan, pengubahan, dan penghapusan data oleh pengguna secara real-time.
                     </p>
                 </div>
 
-                {/* Filter Selector */}
-                <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center gap-4">
-                    <div className="flex-1 w-full">
-                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                            Kategori / Fitur Sistem
-                        </label>
-                        <CustomSelect
-                            value={tableFilter}
-                            onChange={(e) => setTableFilter(e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">Semua Kategori</option>
-                            <option value="journal_entries">Jurnal Transaksi</option>
-                            <option value="journal_entry_lines">Rincian Jurnal</option>
-                            <option value="bank_mutations">Mutasi Bank</option>
-                            <option value="fiscal_periods">Periode Akuntansi</option>
-                            <option value="users">Pengguna Aplikasi</option>
-                            <option value="accounts">Chart of Accounts (COA)</option>
-                        </CustomSelect>
+                {/* Real-time Multi-Filter Toolbar */}
+                <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Filter Otomatis (Real-time)
+                        </h3>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={handleResetFilters}
+                                className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-semibold"
+                            >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Reset Filter</span>
+                            </button>
+                        )}
                     </div>
 
-                    <div className="w-full md:w-64">
-                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                            Jenis Aktivitas
-                        </label>
-                        <CustomSelect
-                            value={actionFilter}
-                            onChange={(e) => setActionFilter(e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">Semua Aktivitas</option>
-                            <option value="create">Tambah Baru</option>
-                            <option value="update">Perubahan Data</option>
-                            <option value="delete">Hapus Data</option>
-                            <option value="close_period">Tutup Buku</option>
-                        </CustomSelect>
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                        {/* 1. Search Bar */}
+                        <div className="lg:col-span-2 relative">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Cari Kata Kunci / Subjek
+                            </label>
+                            <div className="relative">
+                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Cari deskripsi, referensi, atau user..."
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-emerald-500 focus:border-emerald-500"
+                                />
+                                {search && (
+                                    <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
-                    <div className="pt-5 w-full md:w-auto">
-                        <button
-                            onClick={handleFilter}
-                            className="w-full md:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
-                        >
-                            Terapkan Filter
-                        </button>
+                        {/* 2. Kategori Fitur */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Fitur / Kategori
+                            </label>
+                            <CustomSelect
+                                value={tableName}
+                                onChange={(e) => setTableName(e.target.value)}
+                                className="w-full text-xs"
+                            >
+                                <option value="">Semua Kategori</option>
+                                <option value="journal_entries">Jurnal Transaksi</option>
+                                <option value="journal_entry_lines">Rincian Jurnal</option>
+                                <option value="bank_mutations">Mutasi Bank</option>
+                                <option value="fiscal_periods">Periode Akuntansi</option>
+                                <option value="users">Pengguna Aplikasi</option>
+                                <option value="accounts">Chart of Accounts</option>
+                            </CustomSelect>
+                        </div>
+
+                        {/* 3. Jenis Aksi */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Jenis Aktivitas
+                            </label>
+                            <CustomSelect
+                                value={action}
+                                onChange={(e) => setAction(e.target.value)}
+                                className="w-full text-xs"
+                            >
+                                <option value="">Semua Aksi</option>
+                                <option value="create">Tambah Baru</option>
+                                <option value="update">Perubahan Data</option>
+                                <option value="delete">Hapus Data</option>
+                                <option value="close_period">Tutup Buku</option>
+                            </CustomSelect>
+                        </div>
+
+                        {/* 4. Filter Pengguna */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                Pengguna
+                            </label>
+                            <CustomSelect
+                                value={userId}
+                                onChange={(e) => setUserId(e.target.value)}
+                                className="w-full text-xs"
+                            >
+                                <option value="">Semua User</option>
+                                {usersList.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </CustomSelect>
+                        </div>
+
+                        {/* 5. Range Tanggal */}
+                        <div className="grid grid-cols-2 gap-1.5 lg:col-span-1">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">
+                                    Dari
+                                </label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-2 text-[11px]"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">
+                                    Sampai
+                                </label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2 py-2 text-[11px]"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -146,7 +258,7 @@ export default function AuditTrail({ auditTrails, selectedTable, selectedAction 
                                 ) : (
                                     <tr>
                                         <td colSpan="6" className="py-8 text-center text-gray-500 text-xs">
-                                            Belum ada catatan log audit trail.
+                                            Tidak ada catatan log audit trail yang sesuai dengan filter.
                                         </td>
                                     </tr>
                                 )}

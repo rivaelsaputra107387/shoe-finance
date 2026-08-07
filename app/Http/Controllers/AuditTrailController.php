@@ -18,12 +18,37 @@ class AuditTrailController extends Controller
 
         $query = AuditTrail::with('user')->latest('created_at');
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('table_name', 'like', "%{$search}%")
+                ->orWhere('action', 'like', "%{$search}%")
+                ->orWhere('old_data', 'like', "%{$search}%")
+                ->orWhere('new_data', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('table_name')) {
             $query->where('table_name', $request->table_name);
         }
 
         if ($request->filled('action')) {
             $query->where('action', $request->action);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
         }
 
         $auditTrails = $query->paginate(15)->withQueryString();
@@ -144,10 +169,12 @@ class AuditTrailController extends Controller
             return $audit;
         });
 
+        $usersList = \App\Models\User::orderBy('name')->get(['id', 'name']);
+
         return Inertia::render('Settings/AuditTrail', [
-            'auditTrails'    => $auditTrails,
-            'selectedTable'  => $request->input('table_name', ''),
-            'selectedAction' => $request->input('action', ''),
+            'auditTrails' => $auditTrails,
+            'usersList'   => $usersList,
+            'filters'     => $request->only(['search', 'table_name', 'action', 'user_id', 'start_date', 'end_date']),
         ]);
     }
 }
