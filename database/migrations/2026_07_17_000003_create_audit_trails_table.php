@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('table_name', 50);
             $table->unsignedBigInteger('record_id');
             $table->string('action', 20); // create|update|delete|close_period
-            $table->json('old_data')->nullable();
-            $table->json('new_data')->nullable();
+            $table->longText('old_data')->nullable();
+            $table->longText('new_data')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
             $table->index(['table_name', 'record_id']);

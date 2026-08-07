@@ -21,7 +21,7 @@ return new class extends Migration
             
             // Decoupled API Reference
             $table->string('matched_invoice_ref')->nullable();
-            $table->json('matched_invoice_data')->nullable();
+            $table->longText('matched_invoice_data')->nullable();
             
             // Relasi ke Jurnal
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();

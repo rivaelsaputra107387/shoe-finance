@@ -18,8 +18,6 @@ class DatabaseSeeder extends Seeder
             FiscalPeriodSeeder::class,
             AccountSeeder::class,
             SuspenseAccountSeeder::class,
-            DummyTransactionSeeder::class,
-            DemoTransactionSeeder::class,
         ]);
     }
 }
