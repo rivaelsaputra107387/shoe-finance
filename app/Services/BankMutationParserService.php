@@ -191,7 +191,22 @@ class BankMutationParserService
             return null;
         }
 
-        // Translate Indonesian month names to English
+        $dateRaw = trim($dateRaw);
+
+        // 1. Check for standard DD/MM/YY or DD/MM/YYYY format FIRST
+        // (Because Carbon::parse automatically assumes MM/DD/YY when using slashes)
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+|$)/', $dateRaw, $matches)) {
+            $day   = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+            $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
+            $year  = strlen($matches[3]) === 2 ? '20' . $matches[3] : $matches[3];
+            
+            // Validate valid date (e.g., not 31 Feb)
+            if (checkdate((int)$month, (int)$day, (int)$year)) {
+                return "{$year}-{$month}-{$day}";
+            }
+        }
+
+        // 2. Translate Indonesian month names to English
         $cleanStr = strtolower($dateRaw);
         foreach ($this->monthTranslations as $idMonth => $enMonth) {
             if (str_contains($cleanStr, $idMonth)) {
@@ -200,20 +215,12 @@ class BankMutationParserService
             }
         }
 
-        // Try standard Carbon parsing
+        // 3. Try standard Carbon parsing as fallback
         try {
             return Carbon::parse($cleanStr)->format('Y-m-d');
         } catch (\Exception $e) {
-            // Fallback for dd/mm/yyyy or dd-mm-yyyy
-            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/', $dateRaw, $matches)) {
-                $day   = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-                $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-                $year  = strlen($matches[3]) === 2 ? '20' . $matches[3] : $matches[3];
-                return "{$year}-{$month}-{$day}";
-            }
+            return null;
         }
-
-        return null;
     }
 
     /**
