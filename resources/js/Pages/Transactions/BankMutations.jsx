@@ -677,13 +677,15 @@ export default function BankMutations({ mutations, filters }) {
                                                                     <span>Edit</span>
                                                                 </button>
                                                             )}
-                                                            <button
-                                                                disabled={true}
-                                                                className="px-2 py-1.5 bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 rounded-lg text-[11px] font-semibold cursor-not-allowed opacity-60 select-none"
-                                                                title="Fitur Match API Segera Hadir / Non-Aktif"
-                                                            >
-                                                                Match API
-                                                            </button>
+                                                            {item.source_type !== 'manual' && (
+                                                                <button
+                                                                    disabled={true}
+                                                                    className="px-2 py-1.5 bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-600 rounded-lg text-[11px] font-semibold cursor-not-allowed opacity-60 select-none"
+                                                                    title="Fitur Match API Segera Hadir / Non-Aktif"
+                                                                >
+                                                                    Match API
+                                                                </button>
+                                                            )}
 
                                                             <button
                                                                 onClick={() => promptGenerateDraft(item)}

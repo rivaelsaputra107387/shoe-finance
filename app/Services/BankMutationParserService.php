@@ -193,7 +193,12 @@ class BankMutationParserService
 
         $dateRaw = trim($dateRaw);
 
-        // 1. Check for standard DD/MM/YY or DD/MM/YYYY format FIRST
+        // 1. Handle BCA's "PEND" (Pending) status by defaulting to today's date
+        if (strtoupper($dateRaw) === 'PEND' || str_starts_with(strtoupper($dateRaw), 'PEND')) {
+            return Carbon::today()->format('Y-m-d');
+        }
+
+        // 2. Check for standard DD/MM/YY or DD/MM/YYYY format FIRST
         // (Because Carbon::parse automatically assumes MM/DD/YY when using slashes)
         if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+|$)/', $dateRaw, $matches)) {
             $day   = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
