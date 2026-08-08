@@ -262,11 +262,13 @@ class BankMutationParserService
             $kreditVal = $this->cleanNumber($kreditStr);
             $debitVal  = $this->cleanNumber($debitStr);
 
-            // Pada mutasi Mandiri: Kolom Debit = Uang Masuk (Saldo bertambah), Kolom Kredit = Uang Keluar (Saldo berkurang)
-            if ($debitVal > 0) {
-                return ['amount' => $debitVal, 'type' => 'IN', 'format' => 'SEPARATE'];
-            } elseif ($kreditVal > 0) {
-                return ['amount' => $kreditVal, 'type' => 'OUT', 'format' => 'SEPARATE'];
+            // Pada rekening koran nasabah: 
+            // Kolom Kredit = Uang Masuk (Bank menambah liabilitas ke nasabah)
+            // Kolom Debit = Uang Keluar (Bank mengurangi liabilitas ke nasabah)
+            if ($kreditVal > 0) {
+                return ['amount' => $kreditVal, 'type' => 'IN', 'format' => 'SEPARATE'];
+            } elseif ($debitVal > 0) {
+                return ['amount' => $debitVal, 'type' => 'OUT', 'format' => 'SEPARATE'];
             }
         }
 
