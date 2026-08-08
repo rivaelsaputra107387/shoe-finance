@@ -186,16 +186,16 @@ class BankMutationParserService
      */
     protected function parseDate(string $dateRaw): ?string
     {
-        // Ignore hashes like "############"
-        if (str_contains($dateRaw, '#') || strlen($dateRaw) < 6) {
-            return null;
-        }
-
         $dateRaw = trim($dateRaw);
 
         // 1. Handle BCA's "PEND" (Pending) status by defaulting to today's date
         if (strtoupper($dateRaw) === 'PEND' || str_starts_with(strtoupper($dateRaw), 'PEND')) {
             return Carbon::today()->format('Y-m-d');
+        }
+
+        // Ignore hashes like "############" or extremely short invalid strings
+        if (str_contains($dateRaw, '#') || strlen($dateRaw) < 6) {
+            return null;
         }
 
         // 2. Check for standard DD/MM/YY or DD/MM/YYYY format FIRST
