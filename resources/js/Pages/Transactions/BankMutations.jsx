@@ -777,10 +777,15 @@ export default function BankMutations({ mutations, filters }) {
                                 <input
                                     type="file"
                                     onChange={(e) => setData('file', e.target.files[0])}
-                                    accept=".csv,.txt,.xls,.xlsx"
+                                    accept=".csv,.txt"
                                     required
                                     className="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-950 dark:file:text-emerald-400 cursor-pointer"
                                 />
+                                {errors.file && (
+                                    <p className="mt-1.5 text-[11px] font-semibold text-rose-500">
+                                        {errors.file}
+                                    </p>
+                                )}
                                 <p className="text-[11px] text-gray-400 mt-1">
                                     File mentah BCA/Mandiri dapat langsung diunggah tanpa membuang baris judul.
                                 </p>
