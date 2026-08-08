@@ -50,36 +50,51 @@ class BankMutationParserService
             return [];
         }
 
-        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if (empty($lines)) {
+        // 1. Read file and remove UTF-8 BOM
+        $content = file_get_contents($filePath);
+        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+        // Normalize line endings
+        $content = str_replace("\r\n", "\n", $content);
+        $content = str_replace("\r", "\n", $content);
+        file_put_contents($filePath, $content);
+
+        // 2. Detect delimiter
+        $handle = fopen($filePath, 'r');
+        $sampleLines = [];
+        for ($i = 0; $i < 10 && !feof($handle); $i++) {
+            $sampleLines[] = fgets($handle);
+        }
+        fclose($handle);
+        $delimiter = $this->detectDelimiter($sampleLines);
+
+        // 3. Parse CSV rows properly handling multiline quotes
+        $allRows = [];
+        $handle = fopen($filePath, 'r');
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $allRows[] = $row;
+        }
+        fclose($handle);
+
+        if (empty($allRows)) {
             return [];
         }
 
-        // Remove UTF-8 BOM from the very first line (common in Excel CSV exports)
-        if (isset($lines[0])) {
-            $lines[0] = preg_replace('/^\xEF\xBB\xBF/', '', $lines[0]);
-        }
-
-        // 1. Auto-detect delimiter (, or ; or \t)
-        $delimiter = $this->detectDelimiter($lines);
-
-        // 2. Scan lines to find the header row index and column map
-        $headerInfo = $this->findHeaderRow($lines, $delimiter);
+        // 4. Find header row index and column map
+        $headerInfo = $this->findHeaderRow($allRows);
         if (!$headerInfo) {
             return [];
         }
 
         $headerRowIndex = $headerInfo['index'];
         $colMap         = $headerInfo['map'];
+        $parsedRecords  = [];
 
-        $parsedRecords = [];
-
-        // 3. Process data rows after header
-        for ($i = $headerRowIndex + 1; $i < count($lines); $i++) {
-            $row = str_getcsv($lines[$i], $delimiter, '"', '\\');
+        // 5. Process data rows after header
+        for ($i = $headerRowIndex + 1; $i < count($allRows); $i++) {
+            $row = $allRows[$i];
 
             // Skip completely empty rows
-            if (empty(array_filter($row))) {
+            if (!is_array($row) || empty(array_filter($row))) {
                 continue;
             }
 
@@ -140,13 +155,14 @@ class BankMutationParserService
     }
 
     /**
-     * Scan lines to find the row containing header keywords.
+     * Scan rows to find the row containing header keywords.
      */
-    protected function findHeaderRow(array $lines, string $delimiter): ?array
+    protected function findHeaderRow(array $rows): ?array
     {
-        foreach ($lines as $index => $line) {
-            $row = str_getcsv($line, $delimiter, '"', '\\');
-            $normalizedRow = array_map(fn ($item) => strtolower(trim($item)), $row);
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) continue;
+            
+            $normalizedRow = array_map(fn ($item) => strtolower(trim((string)$item)), $row);
 
             $dateCol   = null;
             $descCol   = null;
