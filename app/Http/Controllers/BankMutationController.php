@@ -91,8 +91,10 @@ class BankMutationController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file'        => ['required', 'file'],
+            'file'        => ['required', 'file', 'mimes:csv,txt', 'mimetypes:text/csv,text/plain'],
             'bank_source' => ['nullable', 'string'],
+        ], [
+            'file.mimes' => 'File harus berformat CSV. Jika Anda menggunakan Excel, silakan pilih "Save As" -> "CSV (Comma delimited)".'
         ]);
 
         $file = $request->file('file');
