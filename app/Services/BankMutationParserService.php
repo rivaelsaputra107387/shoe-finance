@@ -55,6 +55,11 @@ class BankMutationParserService
             return [];
         }
 
+        // Remove UTF-8 BOM from the very first line (common in Excel CSV exports)
+        if (isset($lines[0])) {
+            $lines[0] = preg_replace('/^\xEF\xBB\xBF/', '', $lines[0]);
+        }
+
         // 1. Auto-detect delimiter (, or ; or \t)
         $delimiter = $this->detectDelimiter($lines);
 
