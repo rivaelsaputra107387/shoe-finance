@@ -81,6 +81,25 @@ class BankMutationParserService
 
         // 4. Find header row index and column map
         $headerInfo = $this->findHeaderRow($allRows);
+        
+        // Fallback for headerless data (e.g. user copied data without headers)
+        if (!$headerInfo && isset($allRows[0]) && is_array($allRows[0]) && count($allRows[0]) >= 4) {
+            $firstCol = trim((string)$allRows[0][0]);
+            // If the first column looks like a date or 'PEND'
+            if (preg_match('/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/', $firstCol) || strtoupper($firstCol) === 'PEND') {
+                $headerInfo = [
+                    'index' => -1, // Start processing from row 0 (since index + 1 = 0)
+                    'map' => [
+                        'date'   => 0,
+                        'desc'   => 1,
+                        'jumlah' => 3,
+                        'kredit' => null,
+                        'debit'  => null,
+                    ]
+                ];
+            }
+        }
+
         if (!$headerInfo) {
             return [];
         }
