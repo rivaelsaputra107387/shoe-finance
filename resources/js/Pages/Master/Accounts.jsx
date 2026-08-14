@@ -321,6 +321,33 @@ export default function Accounts({ accounts, parents, filters }) {
                                     </CustomSelect>
                                 </div>
                             </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block font-semibold mb-1">Kategori Laporan</label>
+                                    <CustomSelect value={data.report_category} onChange={(e) => setData('report_category', e.target.value)} className="w-full">
+                                        <option value="Neraca">Neraca</option>
+                                        <option value="Laba Rugi">Laba Rugi</option>
+                                    </CustomSelect>
+                                </div>
+                                <div>
+                                    <label className="block font-semibold mb-1">
+                                        Parent Akun
+                                        <span className="ml-1 font-normal text-gray-400">(Opsional)</span>
+                                    </label>
+                                    <CustomSelect
+                                        value={data.parent_id}
+                                        onChange={(e) => setData('parent_id', e.target.value)}
+                                        className="w-full"
+                                    >
+                                        <option value="">— Tidak ada (Akun Induk) —</option>
+                                        {parents?.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.code} – {p.name}
+                                            </option>
+                                        ))}
+                                    </CustomSelect>
+                                </div>
+                            </div>
                             <div className="flex justify-end gap-3 pt-3">
                                 <button type="button" onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
                                 <button type="submit" disabled={processing} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl">
