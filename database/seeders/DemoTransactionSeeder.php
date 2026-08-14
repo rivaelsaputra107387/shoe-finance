@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\DB;
 class DemoTransactionSeeder extends Seeder
 {
     /**
+     * 
+     * public function index run(): void
+     * {
+     * 
+     * }
      * Run the database seeds.
      * Seeds 13 realistic financial transactions for June 2026.
      */
