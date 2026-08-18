@@ -273,8 +273,8 @@ export default function DraftJournals({ entries }) {
                                     <th className="py-2.5 px-2">Rincian Akun</th>
                                     <th className="py-2.5 px-2 w-[105px] text-right text-emerald-600 dark:text-emerald-400">Debet</th>
                                     <th className="py-2.5 px-2 w-[105px] text-right text-rose-600 dark:text-rose-400">Kredit</th>
-                                    <th className="py-2.5 px-2 w-[100px]">Status Akun</th>
-                                    <th className="py-2.5 px-2 w-[120px] text-right">Aksi</th>
+                                    <th className="py-2.5 px-2 w-[110px]">Status Akun</th>
+                                    <th className="py-2.5 px-2 w-[150px] text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
