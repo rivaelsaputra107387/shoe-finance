@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('request_number')->unique();
             $table->boolean('is_batch')->default(false);
             $table->integer('total_spks')->default(1);
-            $table->json('spk_list')->nullable();
+            $table->longText('spk_list')->nullable();
             $table->unsignedBigInteger('primary_work_order_id')->nullable();
             $table->string('primary_spk_number')->nullable();
             $table->enum('type', ['SHOPPING', 'PRODUCTION_PO']);
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->string('callback_webhook_url');
             $table->string('idempotency_key')->unique()->nullable();
-            $table->json('payload_raw')->nullable();
+            $table->longText('payload_raw')->nullable();
             $table->timestamp('received_at');
             $table->timestamp('approved_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();

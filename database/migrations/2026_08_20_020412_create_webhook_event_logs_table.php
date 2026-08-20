@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('purchase_request_id');
             $table->string('event_type');
             $table->enum('status', ['PENDING', 'SENT', 'FAILED'])->default('PENDING');
-            $table->json('payload');
+            $table->longText('payload');
             $table->integer('response_code')->nullable();
             $table->text('response_body')->nullable();
             $table->integer('attempt_count')->default(0);
