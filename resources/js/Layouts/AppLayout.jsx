@@ -26,6 +26,7 @@ import {
     Archive,
     ChevronDown,
     Menu,
+    ShoppingCart,
 } from 'lucide-react';
 
 export default function AppLayout({ children, title }) {
@@ -62,6 +63,7 @@ export default function AppLayout({ children, title }) {
         {
             group: 'Transaksi',
             items: [
+                { name: 'Pengajuan Belanja', href: '/app/purchase-requests', icon: ShoppingCart, show: true },
                 { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: true },
                 { name: 'Draft Jurnal', href: '/app/draft-journals', icon: BookOpen, show: true },
                 { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
