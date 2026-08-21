@@ -17,6 +17,7 @@ class FinlogWebhookSenderService
                 'primary_work_order_id' => $purchaseRequest->primary_work_order_id,
                 'primary_spk_number' => $purchaseRequest->primary_spk_number,
                 'status' => $purchaseRequest->status,
+                'rejection_reason' => $purchaseRequest->rejection_reason,
                 'updated_at' => now()->toIso8601String(),
             ]
         ];
