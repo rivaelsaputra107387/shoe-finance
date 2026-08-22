@@ -26,7 +26,7 @@ class FinlogWebhookSenderService
         $signature = hash_hmac('sha256', json_encode($payload), $secret);
 
         $response = Http::timeout(10)->withHeaders([
-            'X-Finlog-Signature' => $signature,
+            'X-Finlog-Signature' => 'sha256=' . $signature,
             'X-Finlog-Event-Id' => uniqid('evt_'),
             'X-Finlog-Timestamp' => now()->timestamp,
             'Accept' => 'application/json',
