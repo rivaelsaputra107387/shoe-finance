@@ -162,6 +162,22 @@ class MasterController extends Controller
         return back()->with('success', 'Periode Akuntansi berhasil diperbarui.');
     }
 
+    public function deleteFiscalPeriod(FiscalPeriod $fiscalPeriod)
+    {
+        if ($fiscalPeriod->status === 'closed') {
+            return back()->with('error', 'Gagal menghapus: Periode yang sudah ditutup tidak bisa dihapus.');
+        }
+
+        $journalCount = \App\Models\JournalEntry::where('fiscal_period_id', $fiscalPeriod->id)->count();
+        if ($journalCount > 0) {
+            return back()->with('error', "Gagal menghapus: Periode ini sudah memiliki {$journalCount} entri jurnal.");
+        }
+
+        $fiscalPeriod->delete();
+
+        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dihapus.");
+    }
+
     public function reopenFiscalPeriod(FiscalPeriod $fiscalPeriod)
     {
         if ($fiscalPeriod->status !== 'closed') {

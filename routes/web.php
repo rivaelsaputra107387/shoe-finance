@@ -98,6 +98,7 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::get('/fiscal-periods', [MasterController::class, 'fiscalPeriods'])->name('master.fiscal-periods');
     Route::post('/fiscal-periods', [MasterController::class, 'storeFiscalPeriod'])->name('master.fiscal-periods.store');
     Route::put('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'updateFiscalPeriod'])->name('master.fiscal-periods.update');
+    Route::delete('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'deleteFiscalPeriod'])->name('master.fiscal-periods.destroy');
     Route::post('/fiscal-periods/{fiscalPeriod}/reopen', [MasterController::class, 'reopenFiscalPeriod'])->name('master.fiscal-periods.reopen');
 
     // Penutupan Periode (Owner & Finance)
