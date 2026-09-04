@@ -20,7 +20,11 @@ class PeriodClosingController extends Controller
             abort(403, 'Akses ditolak: Hanya Owner & Finance yang dapat mengakses Penutupan Periode.');
         }
 
-        $activePeriod = FiscalPeriod::active();
+        // Enforce sequential closing by always targeting the oldest unclosed period
+        $activePeriod = FiscalPeriod::whereIn('status', ['open', 'reopened'])
+            ->orderBy('start_date', 'asc')
+            ->first();
+            
         $periodData = null;
 
         if ($activePeriod) {

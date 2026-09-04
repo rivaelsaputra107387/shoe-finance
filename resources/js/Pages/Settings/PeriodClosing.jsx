@@ -65,7 +65,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                                 </div>
                                 <div>
                                     <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block">
-                                        Periode Berjalan (OPEN)
+                                        Menunggu Penutupan
                                     </span>
                                     <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mt-0.5">
                                         {activePeriod.name}
