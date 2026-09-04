@@ -159,13 +159,25 @@ export default function FiscalPeriods({ periods }) {
                             {editingPeriod && (
                                 <div>
                                     <label className="block font-semibold mb-1 text-gray-700 dark:text-gray-300">Status Periode</label>
-                                    <CustomSelect value={data.status} onChange={(e) => setData('status', e.target.value)} disabled={true} className="w-full">
-                                        <option value="open">Open</option>
-                                        <option value="closed">Closed</option>
+                                    <CustomSelect 
+                                        value={data.status} 
+                                        onChange={(e) => setData('status', e.target.value)} 
+                                        disabled={editingPeriod.status === 'closed'} 
+                                        className="w-full"
+                                    >
+                                        <option value="open">Open (Reguler)</option>
+                                        <option value="reopened">Reopened (Dibuka Ulang / Susulan)</option>
+                                        {editingPeriod.status === 'closed' && <option value="closed">Closed (Ditutup)</option>}
                                     </CustomSelect>
-                                    <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 italic">
-                                        * Status periode dikunci. Penutupan periode hanya dapat dilakukan melalui menu <strong>Penutupan Periode</strong>.
-                                    </p>
+                                    {editingPeriod.status === 'closed' ? (
+                                        <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 italic">
+                                            * Status periode dikunci. Gunakan tombol gembok oranye di tabel untuk membuka ulang (reopen).
+                                        </p>
+                                    ) : (
+                                        <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 italic">
+                                            * Kamu dapat menandai periode historis ini sebagai Reopened untuk keperluan backfilling. Penutupan periode (Closed) hanya bisa dilakukan melalui menu Penutupan Periode.
+                                        </p>
+                                    )}
                                 </div>
                             )}
                             <div className="flex justify-end gap-3 pt-3">

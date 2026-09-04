@@ -144,13 +144,20 @@ class MasterController extends Controller
             'name'       => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'end_date'   => ['required', 'date', 'after_or_equal:start_date'],
+            'status'     => ['nullable', 'in:open,reopened'],
         ]);
 
-        $fiscalPeriod->update([
+        $data = [
             'name'       => $request->name,
             'start_date' => $request->start_date,
             'end_date'   => $request->end_date,
-        ]);
+        ];
+
+        if ($request->has('status') && $fiscalPeriod->status !== 'closed') {
+            $data['status'] = $request->status;
+        }
+
+        $fiscalPeriod->update($data);
 
         return back()->with('success', 'Periode Akuntansi berhasil diperbarui.');
     }
