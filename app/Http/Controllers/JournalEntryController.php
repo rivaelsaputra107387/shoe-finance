@@ -96,7 +96,7 @@ class JournalEntryController extends Controller
 
     public function create(): Response
     {
-        $periods = FiscalPeriod::where('status', 'open')->orderByDesc('start_date')->get();
+        $periods = FiscalPeriod::whereIn('status', ['open', 'reopened'])->orderByDesc('start_date')->get();
         $accounts = Account::active()->whereNotNull('parent_id')->orderBy('code')->get();
 
         return Inertia::render('Transactions/CreateJournal', [

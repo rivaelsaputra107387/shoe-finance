@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
-import { Plus, Calendar, CheckCircle2, Lock, X, Pencil } from 'lucide-react';
+import { Plus, Calendar, CheckCircle2, Lock, Unlock, X, Pencil } from 'lucide-react';
 
 export default function FiscalPeriods({ periods }) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -93,13 +93,15 @@ export default function FiscalPeriods({ periods }) {
                                             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                                 p.status === 'open'
                                                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                                    : p.status === 'reopened'
+                                                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 border border-gray-200 dark:border-gray-700'
                                             }`}>
-                                                {p.status === 'open' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                                                {p.status === 'open' ? <CheckCircle2 className="w-3.5 h-3.5" /> : p.status === 'reopened' ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                                                 <span className="capitalize">{p.status}</span>
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-4 text-right">
+                                        <td className="py-3.5 px-4 text-right flex justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenEdit(p)}
                                                 className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
@@ -107,6 +109,20 @@ export default function FiscalPeriods({ periods }) {
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </button>
+                                            
+                                            {p.status === 'closed' && (
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm(`Apakah Anda yakin ingin membuka ulang (reopen) periode ${p.name}?`)) {
+                                                            router.post(`/app/fiscal-periods/${p.id}/reopen`);
+                                                        }
+                                                    }}
+                                                    className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 transition-colors"
+                                                    title="Buka Ulang (Reopen) Periode"
+                                                >
+                                                    <Unlock className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

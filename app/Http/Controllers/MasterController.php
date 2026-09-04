@@ -154,4 +154,15 @@ class MasterController extends Controller
 
         return back()->with('success', 'Periode Akuntansi berhasil diperbarui.');
     }
+
+    public function reopenFiscalPeriod(FiscalPeriod $fiscalPeriod)
+    {
+        if ($fiscalPeriod->status !== 'closed') {
+            return back()->with('error', 'Hanya periode yang sudah ditutup yang bisa dibuka ulang.');
+        }
+
+        $fiscalPeriod->update(['status' => 'reopened']);
+
+        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dibuka ulang (Reopened). Anda sekarang dapat menginput transaksi untuk periode ini.");
+    }
 }

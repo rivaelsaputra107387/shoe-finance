@@ -83,6 +83,11 @@ class FiscalPeriod extends Model
         return $query->where('status', 'closed');
     }
 
+    public function scopeReopened($query)
+    {
+        return $query->where('status', 'reopened');
+    }
+
     // ───────────────────────────────────────
     // Accessors
     // ───────────────────────────────────────
@@ -90,6 +95,11 @@ class FiscalPeriod extends Model
     public function getIsOpenAttribute(): bool
     {
         return $this->status === 'open';
+    }
+
+    public function getIsReopenedAttribute(): bool
+    {
+        return $this->status === 'reopened';
     }
 
     // ───────────────────────────────────────
