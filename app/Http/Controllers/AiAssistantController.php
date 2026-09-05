@@ -59,7 +59,7 @@ class AiAssistantController extends Controller
             // Menggunakan gemini-3.6-flash sesuai instruksi user
             $modelUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=' . $apiKey;
 
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(120)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post($modelUrl, $payload);
 

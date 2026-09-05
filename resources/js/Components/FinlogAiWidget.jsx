@@ -62,8 +62,11 @@ export default function FinlogAiWidget({ isOpen, onClose }) {
         setIsLoading(true);
 
         try {
+            // Jangan kirim pesan error (isError = true) ke API
+            const validMessages = newMessages.filter(msg => !msg.isError);
+
             const response = await axios.post('/app/ai-chat', {
-                messages: newMessages
+                messages: validMessages
             });
 
             if (response.data?.reply) {
