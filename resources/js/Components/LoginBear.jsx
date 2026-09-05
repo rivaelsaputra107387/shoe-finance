@@ -7,10 +7,10 @@ import { motion, useAnimation } from 'framer-motion';
 /**
  * LoginBear – interactive SVG bear mascot (forwardRef version).
  *
- * Props:   isCovering {boolean}
+ * Props:   isCovering {boolean}, className {string}
  * Ref API: ref.current.wiggle() – trigger tickle wiggle from parent
  */
-const LoginBear = forwardRef(function LoginBear({ isCovering = false }, ref) {
+const LoginBear = forwardRef(function LoginBear({ isCovering = false, className = '' }, ref) {
     const leftArmControls  = useAnimation();
     const rightArmControls = useAnimation();
     const bearControls     = useAnimation();
@@ -202,15 +202,15 @@ const LoginBear = forwardRef(function LoginBear({ isCovering = false }, ref) {
        JSX
     ────────────────────────────────────────── */
     return (
-        <div className="flex flex-col items-center select-none" aria-hidden="true">
+        <div className={`flex flex-col items-center select-none ${className}`} aria-hidden="true">
             <motion.svg
                 ref={svgRef}
                 animate={bearControls}
                 viewBox="0 0 160 185"
-                width="160"
-                height="185"
+                width="100%"
+                height="100%"
                 xmlns="http://www.w3.org/2000/svg"
-                style={{ overflow: 'visible', transformOrigin: '80px 180px' }}
+                style={{ overflow: 'visible', transformOrigin: '80px 180px', maxWidth: '160px' }}
             >
                 {/* Shadow */}
                 <ellipse cx="80" cy="180" rx="38" ry="5.5" fill="rgba(0,0,0,0.12)" />

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Bot, X, Send, Loader2, User, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import LoginBear from '@/Components/LoginBear';
 
 export default function FinlogAiWidget({ isOpen, onClose }) {
     const [messages, setMessages] = useState([
@@ -100,8 +101,8 @@ export default function FinlogAiWidget({ isOpen, onClose }) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-emerald-50/50 dark:bg-emerald-900/10">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <div className="w-10 h-10 flex items-end justify-center flex-shrink-0 drop-shadow-sm">
+                            <LoginBear className="w-10 h-10" />
                         </div>
                         <div>
                             <h2 className="font-bold text-gray-900 dark:text-white text-sm">Finlog Assistant</h2>
@@ -122,9 +123,15 @@ export default function FinlogAiWidget({ isOpen, onClose }) {
                         const isUser = msg.role === 'user';
                         return (
                             <div key={index} className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-emerald-100 dark:bg-emerald-900/50'}`}>
-                                    {isUser ? <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-                                </div>
+                                {isUser ? (
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border border-white/50 bg-indigo-100 dark:bg-indigo-900/50">
+                                        <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                    </div>
+                                ) : (
+                                    <div className="w-8 h-8 flex items-end justify-center flex-shrink-0 drop-shadow-sm">
+                                        <LoginBear className="w-8 h-8" />
+                                    </div>
+                                )}
                                 <div className={`max-w-[80%] rounded-2xl p-3 text-sm shadow-sm overflow-hidden ${
                                     isUser 
                                         ? 'bg-indigo-600 text-white rounded-tr-sm' 
@@ -146,8 +153,8 @@ export default function FinlogAiWidget({ isOpen, onClose }) {
                     
                     {isLoading && (
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                                <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <div className="w-8 h-8 flex items-end justify-center flex-shrink-0 drop-shadow-sm">
+                                <LoginBear className="w-8 h-8 animate-pulse" />
                             </div>
                             <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center gap-2">
                                 <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />

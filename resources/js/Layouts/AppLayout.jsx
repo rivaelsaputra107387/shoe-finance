@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import FinlogAiWidget from '@/Components/FinlogAiWidget';
+import LoginBear from '@/Components/LoginBear';
 import {
     LayoutDashboard,
     FileText,
@@ -231,9 +232,9 @@ export default function AppLayout({ children, title }) {
                             <button
                                 onClick={() => setAiWidgetOpen(true)}
                                 title="Buka Finlog AI Assistant"
-                                className="p-2 rounded-xl text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 transition-colors flex items-center justify-center shadow-sm border border-emerald-100 dark:border-emerald-800"
+                                className="p-1 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-center drop-shadow-sm"
                             >
-                                <Sparkles className="w-5 h-5" />
+                                <LoginBear className="w-8 h-8" />
                             </button>
 
                             <button
