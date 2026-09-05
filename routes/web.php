@@ -28,6 +28,10 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // AI Assistant
+    Route::post('/ai-chat', [\App\Http\Controllers\AiAssistantController::class, 'chat'])->name('ai-chat');
+    Route::get('/ai-chat/history', [\App\Http\Controllers\AiAssistantController::class, 'history'])->name('ai-chat.history');
+
     // Profil (All Auth Users)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');

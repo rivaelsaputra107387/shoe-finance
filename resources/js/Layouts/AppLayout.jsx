@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import FinlogAiWidget from '@/Components/FinlogAiWidget';
 import {
     LayoutDashboard,
     FileText,
@@ -27,6 +28,7 @@ import {
     ChevronDown,
     Menu,
     ShoppingCart,
+    Sparkles,
 } from 'lucide-react';
 
 export default function AppLayout({ children, title }) {
@@ -38,6 +40,7 @@ export default function AppLayout({ children, title }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [logoutModalOpen, setLogoutModalOpen] = useState(false);
     const [topbarUserMenuOpen, setTopbarUserMenuOpen] = useState(false);
+    const [aiWidgetOpen, setAiWidgetOpen] = useState(false);
 
     useEffect(() => {
         if (darkMode) {
@@ -226,6 +229,14 @@ export default function AppLayout({ children, title }) {
                         {/* Topbar Actions */}
                         <div className="flex items-center gap-3">
                             <button
+                                onClick={() => setAiWidgetOpen(true)}
+                                title="Buka Finlog AI Assistant"
+                                className="p-2 rounded-xl text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 transition-colors flex items-center justify-center shadow-sm border border-emerald-100 dark:border-emerald-800"
+                            >
+                                <Sparkles className="w-5 h-5" />
+                            </button>
+
+                            <button
                                 onClick={() => setDarkMode(!darkMode)}
                                 title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                                 className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -289,6 +300,12 @@ export default function AppLayout({ children, title }) {
                 cancelText="Batal"
                 onConfirm={() => router.post('/logout')}
                 onClose={() => setLogoutModalOpen(false)}
+            />
+
+            {/* AI Assistant Widget */}
+            <FinlogAiWidget 
+                isOpen={aiWidgetOpen} 
+                onClose={() => setAiWidgetOpen(false)} 
             />
         </div>
     );
