@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\AiChatLog;
+use App\Models\AiChatSession;
 use App\Models\BankMutation;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
@@ -20,11 +21,21 @@ class AiAssistantController extends Controller
         set_time_limit(0);
 
         $request->validate([
+            'session_id'              => 'nullable|exists:ai_chat_sessions,id',
             'messages'                => 'required|array',
             'messages.*.role'         => 'required|in:user,model',
             'messages.*.parts'        => 'required|array',
             'messages.*.parts.*.text' => 'required|string',
         ]);
+
+        $sessionId = $request->input('session_id');
+        if (!$sessionId) {
+            $session = AiChatSession::create([
+                'user_id' => auth()->id(),
+                'title' => 'Percakapan ' . now()->format('d-m-Y H:i'),
+            ]);
+            $sessionId = $session->id;
+        }
 
         $apiKey = env('GEMINI_API_KEY');
         if (!$apiKey) {
@@ -36,9 +47,10 @@ class AiAssistantController extends Controller
 
         if ($latestUserMessage && $latestUserMessage['role'] === 'user') {
             AiChatLog::create([
-                'user_id' => auth()->id(),
-                'role'    => 'user',
-                'message' => $latestUserMessage['parts'][0]['text'] ?? '',
+                'user_id'    => auth()->id(),
+                'session_id' => $sessionId,
+                'role'       => 'user',
+                'message'    => $latestUserMessage['parts'][0]['text'] ?? '',
             ]);
         }
 
@@ -64,11 +76,19 @@ class AiAssistantController extends Controller
                 if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
                     $replyText = $data['candidates'][0]['content']['parts'][0]['text'];
                     AiChatLog::create([
-                        'user_id' => auth()->id(),
-                        'role'    => 'model',
-                        'message' => $replyText,
+                        'user_id'    => auth()->id(),
+                        'session_id' => $sessionId,
+                        'role'       => 'model',
+                        'message'    => $replyText,
                     ]);
-                    return response()->json(['reply' => $replyText]);
+                    
+                    // Update session updated_at
+                    AiChatSession::where('id', $sessionId)->update(['updated_at' => now()]);
+
+                    return response()->json([
+                        'reply'      => $replyText,
+                        'session_id' => $sessionId,
+                    ]);
                 }
 
                 // Check for safety/block reason
@@ -107,23 +127,92 @@ class AiAssistantController extends Controller
         }
     }
 
-    public function history()
+    public function history($sessionId = null)
     {
+        if (!$sessionId) {
+            $session = AiChatSession::where('user_id', auth()->id())->latest('updated_at')->first();
+            if (!$session) {
+                return response()->json(['messages' => [], 'session_id' => null]);
+            }
+            $sessionId = $session->id;
+        }
+
         $logs = AiChatLog::where('user_id', auth()->id())
+            ->where('session_id', $sessionId)
             ->orderBy('id', 'asc')
             ->get()
             ->map(fn ($log) => [
                 'role'  => $log->role,
                 'parts' => [['text' => $log->message]],
             ]);
-        return response()->json(['messages' => $logs]);
+            
+        return response()->json([
+            'messages' => $logs,
+            'session_id' => $sessionId
+        ]);
+    }
+
+    public function sessions()
+    {
+        $sessions = AiChatSession::where('user_id', auth()->id())
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(fn($s) => [
+                'id' => $s->id,
+                'title' => $s->title,
+                'updated_at' => $s->updated_at->format('d-m-Y H:i'),
+            ]);
+            
+        return response()->json(['sessions' => $sessions]);
+    }
+
+    public function createSession()
+    {
+        $session = AiChatSession::create([
+            'user_id' => auth()->id(),
+            'title' => 'Percakapan ' . now()->format('d-m-Y H:i'),
+        ]);
+
+        return response()->json(['session' => [
+            'id' => $session->id,
+            'title' => $session->title,
+            'updated_at' => $session->updated_at->format('d-m-Y H:i'),
+        ]]);
+    }
+
+    public function renameSession(Request $request, $id)
+    {
+        $request->validate(['title' => 'required|string|max:255']);
+        
+        $session = AiChatSession::where('user_id', auth()->id())->findOrFail($id);
+        $session->update(['title' => $request->title]);
+
+        return response()->json(['message' => 'Renamed successfully', 'session' => [
+            'id' => $session->id,
+            'title' => $session->title,
+            'updated_at' => $session->updated_at->format('d-m-Y H:i'),
+        ]]);
+    }
+
+    public function deleteSession($id)
+    {
+        $session = AiChatSession::where('user_id', auth()->id())->findOrFail($id);
+        $session->delete();
+
+        return response()->json(['message' => 'Deleted successfully']);
     }
 
     private function getSystemPrompt(): string
     {
-        $prompt  = "Anda adalah 'Finlog AI Assistant', asisten cerdas internal khusus untuk divisi Finance Shoe Workshop.\n";
-        $prompt .= "Gunakan dokumen panduan DAN data real-time database di bawah sebagai sumber kebenaran.\n";
+        $prompt = "Anda adalah Finlog AI Assistant, asisten cerdas khusus untuk divisi Finance Shoe Workshop.\n";
+        $prompt .= "Anda bertugas membantu mengelola dan memahami Sistem Informasi Akuntansi (SIA) Finlog.\n\n";
+        $prompt .= "Gunakan bahasa Indonesia yang profesional, ramah, dan ringkas. Gunakan format Markdown (bold, tabel, list) agar mudah dibaca.\n";
         $prompt .= "Jangan menjawab hal di luar konteks sistem ini. Tolak permintaan password/kredensial.\n\n";
+        
+        $prompt .= "--- INSTRUKSI UX (SANGAT PENTING) ---\n";
+        $prompt .= "Di bagian PALING AKHIR dari setiap jawabanmu, kamu WAJIB memberikan 2-3 saran pertanyaan lanjutan (follow-up questions) yang relevan dengan topik yang baru saja dibahas.\n";
+        $prompt .= "Formatnya harus persis seperti ini di baris paling bawah (pisahkan dengan karakter |):\n";
+        $prompt .= "SUGGESTIONS: Saran Pertanyaan 1|Saran Pertanyaan 2\n\n";
 
         $prompt .= "--- KNOWLEDGE BASE ---\n\n";
         foreach ([

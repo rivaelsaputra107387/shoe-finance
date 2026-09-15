@@ -5,15 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AiChatLog extends Model
+class AiChatSession extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'session_id',
-        'role',
-        'message',
+        'title',
     ];
 
     public function user()
@@ -21,8 +19,8 @@ class AiChatLog extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function session()
+    public function logs()
     {
-        return $this->belongsTo(AiChatSession::class, 'session_id');
+        return $this->hasMany(AiChatLog::class, 'session_id');
     }
 }

@@ -30,8 +30,11 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
 
     // AI Assistant
     Route::post('/ai-chat', [\App\Http\Controllers\AiAssistantController::class, 'chat'])->name('ai-chat');
-    Route::get('/ai-chat/history', [\App\Http\Controllers\AiAssistantController::class, 'history'])->name('ai-chat.history');
-
+    Route::get('/ai-chat/sessions', [\App\Http\Controllers\AiAssistantController::class, 'sessions'])->name('ai-chat.sessions');
+    Route::post('/ai-chat/sessions', [\App\Http\Controllers\AiAssistantController::class, 'createSession'])->name('ai-chat.create-session');
+    Route::put('/ai-chat/sessions/{id}', [\App\Http\Controllers\AiAssistantController::class, 'renameSession'])->name('ai-chat.rename-session');
+    Route::delete('/ai-chat/sessions/{id}', [\App\Http\Controllers\AiAssistantController::class, 'deleteSession'])->name('ai-chat.delete-session');
+    Route::get('/ai-chat/history/{sessionId?}', [\App\Http\Controllers\AiAssistantController::class, 'history'])->name('ai-chat.history');
     // Profil (All Auth Users)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
