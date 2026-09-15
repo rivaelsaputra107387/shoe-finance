@@ -308,6 +308,24 @@ export default function AppLayout({ children, title }) {
                 isOpen={aiWidgetOpen} 
                 onClose={() => setAiWidgetOpen(false)} 
             />
+
+            {/* AI Assistant Sticky FAB */}
+            {!aiWidgetOpen && (
+                <button
+                    onClick={() => setAiWidgetOpen(true)}
+                    className="fixed bottom-6 right-6 z-50 p-4 bg-white dark:bg-gray-800 rounded-full shadow-2xl hover:shadow-emerald-500/20 hover:-translate-y-1 transition-all duration-300 border border-gray-100 dark:border-gray-700 flex items-center justify-center group"
+                >
+                    <div className="absolute inset-0 bg-emerald-500/10 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+                    <LoginBear className="w-8 h-8 relative z-10 drop-shadow-md group-hover:rotate-12 transition-transform duration-300" />
+                    
+                    {/* Tooltip */}
+                    <span className="absolute -top-10 right-0 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-medium px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-lg">
+                        Tanya Finlog AI
+                        <span className="absolute bottom-[-4px] right-6 w-2 h-2 bg-gray-900 dark:bg-white transform rotate-45"></span>
+                    </span>
+                </button>
+            )}
         </div>
     );
 }
+
