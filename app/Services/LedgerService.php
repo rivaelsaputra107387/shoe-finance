@@ -22,11 +22,31 @@ class LedgerService
         $totalsBefore = $balanceSvc->getCumulativeTotalsBefore($fiscalPeriodId);
         $beginningBalance = $balanceSvc->getBalance($totalsBefore, $account->id, $account->normal_balance);
 
+        // Include any opening balance journal entry lines in the current period into beginning balance
+        $openingLine = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
+            ->where('journal_entries.is_opening', true)
+            ->where('journal_entries.status', 'posted')
+            ->whereNull('journal_entries.deleted_at')
+            ->where('journal_entry_lines.account_id', $accountId)
+            ->selectRaw('COALESCE(SUM(journal_entry_lines.debit), 0) as total_debit, COALESCE(SUM(journal_entry_lines.credit), 0) as total_credit')
+            ->first();
+
+        if ($openingLine) {
+            $isDebit = $account->normal_balance === 'Debet';
+            $openingNet = $isDebit
+                ? ((float) $openingLine->total_debit - (float) $openingLine->total_credit)
+                : ((float) $openingLine->total_credit - (float) $openingLine->total_debit);
+            $beginningBalance += $openingNet;
+        }
+
         $lines = JournalEntryLine::query()
             ->where('journal_entry_lines.account_id', $accountId)
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
             ->where('journal_entries.status', 'posted')
+            ->where('journal_entries.is_opening', false)
             ->whereNull('journal_entries.deleted_at')
             ->select([
                 'journal_entries.entry_date as date',

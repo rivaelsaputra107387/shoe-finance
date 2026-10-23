@@ -30,9 +30,12 @@ class TrialBalanceService
         $balanceSvc = new AccountBalanceService();
         $totals = $balanceSvc->getCumulativeTotalsUpTo($fiscalPeriodId);
 
-        // Load all active leaf accounts (no individual DB calls inside loop)
+        // Load all active leaf accounts (including 3300 - Laba Ditahan)
         $accounts = Account::active()
-            ->whereNotNull('parent_id')
+            ->where(function ($q) {
+                $q->whereNotNull('parent_id')
+                  ->orWhere('code', '3300');
+            })
             ->orderBy('code')
             ->get()
             ->map(function (Account $account) use ($totals) {

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\FiscalPeriod;
+use App\Models\JournalEntry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -184,8 +186,32 @@ class MasterController extends Controller
             return back()->with('error', 'Hanya periode yang sudah ditutup yang bisa dibuka ulang.');
         }
 
-        $fiscalPeriod->update(['status' => 'reopened']);
+        // Enforce sequential reopening: cannot reopen if any later period is still closed
+        $hasLaterClosedPeriod = FiscalPeriod::where('start_date', '>', $fiscalPeriod->start_date)
+            ->where('status', 'closed')
+            ->exists();
 
-        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dibuka ulang (Reopened). Anda sekarang dapat menginput transaksi untuk periode ini.");
+        if ($hasLaterClosedPeriod) {
+            return back()->with('error', "Gagal membuka ulang: Terdapat periode setelah '{$fiscalPeriod->name}' yang masih berstatus ditutup. Harap buka ulang periode terbaru terlebih dahulu secara berurutan.");
+        }
+
+        DB::transaction(function () use ($fiscalPeriod) {
+            // Delete previous closing entries so nominal accounts return to their unclosed balances
+            $closingEntries = JournalEntry::where('fiscal_period_id', $fiscalPeriod->id)
+                ->where('is_closing', true)
+                ->get();
+
+            foreach ($closingEntries as $entry) {
+                $entry->lines()->delete();
+                $entry->forceDelete();
+            }
+
+            $fiscalPeriod->update([
+                'status'    => 'reopened',
+                'closed_by' => null,
+            ]);
+        });
+
+        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dibuka ulang (Reopened). Jurnal penutup periode ini telah dibatalkan sehingga saldo akun kembali aktif.");
     }
 }

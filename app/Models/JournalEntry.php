@@ -72,6 +72,7 @@ class JournalEntry extends Model
         'fiscal_period_id',
         'created_by',
         'is_closing',
+        'is_opening',
         'status',
         'submitted_by',
         'submitted_at',
@@ -89,6 +90,7 @@ class JournalEntry extends Model
         return [
             'entry_date' => 'date',
             'is_closing' => 'boolean',
+            'is_opening' => 'boolean',
             'submitted_at' => 'datetime',
             'posted_at'  => 'datetime',
         ];

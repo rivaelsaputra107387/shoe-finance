@@ -6,6 +6,7 @@ use App\Http\Controllers\BankMutationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\OpeningBalanceController;
 use App\Http\Controllers\PeriodClosingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -108,10 +109,13 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::delete('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'deleteFiscalPeriod'])->name('master.fiscal-periods.destroy');
     Route::post('/fiscal-periods/{fiscalPeriod}/reopen', [MasterController::class, 'reopenFiscalPeriod'])->name('master.fiscal-periods.reopen');
 
-    // Penutupan Periode (Owner & Finance)
+    // Penutupan Periode & Saldo Awal (Owner & Finance)
     Route::middleware(['role:owner|finance'])->group(function () {
         Route::get('/period-closing', [PeriodClosingController::class, 'index'])->name('period-closing.index');
         Route::post('/period-closing/execute', [PeriodClosingController::class, 'execute'])->name('period-closing.execute');
+
+        Route::get('/opening-balances', [OpeningBalanceController::class, 'index'])->name('opening-balances.index');
+        Route::post('/opening-balances', [OpeningBalanceController::class, 'store'])->name('opening-balances.store');
     });
 
     Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('audit-trail.index');

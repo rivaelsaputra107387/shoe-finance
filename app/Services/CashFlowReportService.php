@@ -38,12 +38,13 @@ class CashFlowReportService
             return $this->emptyResult($period);
         }
 
-        // Get all journal entry lines involving cash/bank accounts
+        // Get all journal entry lines involving cash/bank accounts (excluding opening balance entries)
         $cashLines = JournalEntryLine::query()
             ->whereIn('account_id', $cashAccountIds)
             ->whereHas('journalEntry', function ($q) use ($fiscalPeriodId) {
                 $q->where('fiscal_period_id', $fiscalPeriodId)
                   ->where('status', 'posted')
+                  ->where('is_opening', false)
                   ->whereNull('deleted_at');
             })
             ->with(['journalEntry.lines.account'])
@@ -210,7 +211,7 @@ class CashFlowReportService
      */
     private function getBeginningCashBalance(array $cashAccountIds, FiscalPeriod $period): float
     {
-        $balance = JournalEntryLine::query()
+        $beforeBalance = (float) JournalEntryLine::query()
             ->whereIn('account_id', $cashAccountIds)
             ->whereHas('journalEntry', function ($q) use ($period) {
                 $q->where('entry_date', '<', $period->start_date)
@@ -220,7 +221,18 @@ class CashFlowReportService
             ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
             ->value('balance');
 
-        return (float) $balance;
+        $openingBalance = (float) JournalEntryLine::query()
+            ->whereIn('account_id', $cashAccountIds)
+            ->whereHas('journalEntry', function ($q) use ($period) {
+                $q->where('fiscal_period_id', $period->id)
+                  ->where('is_opening', true)
+                  ->where('status', 'posted')
+                  ->whereNull('deleted_at');
+            })
+            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
+            ->value('balance');
+
+        return $beforeBalance + $openingBalance;
     }
 
     /**

@@ -75,7 +75,7 @@ class FiscalPeriod extends Model
 
     public function scopeOpen($query)
     {
-        return $query->where('status', 'open');
+        return $query->whereIn('status', ['open', 'reopened']);
     }
 
     public function scopeClosed($query)
@@ -94,7 +94,7 @@ class FiscalPeriod extends Model
 
     public function getIsOpenAttribute(): bool
     {
-        return $this->status === 'open';
+        return in_array($this->status, ['open', 'reopened']);
     }
 
     public function getIsReopenedAttribute(): bool

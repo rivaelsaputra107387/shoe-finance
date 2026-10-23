@@ -85,7 +85,9 @@ class JournalEntryController extends Controller
         }
 
         $entries = $query->paginate(20)->withQueryString();
-        $accounts = Account::active()->whereNotNull('parent_id')->orderBy('code')->get();
+        $accounts = Account::active()->where(function ($q) {
+            $q->whereNotNull('parent_id')->orWhere('code', '3300');
+        })->orderBy('code')->get();
 
         return Inertia::render('Transactions/DraftJournals', [
             'entries'  => $entries,
@@ -97,7 +99,9 @@ class JournalEntryController extends Controller
     public function create(): Response
     {
         $periods = FiscalPeriod::whereIn('status', ['open', 'reopened'])->orderByDesc('start_date')->get();
-        $accounts = Account::active()->whereNotNull('parent_id')->orderBy('code')->get();
+        $accounts = Account::active()->where(function ($q) {
+            $q->whereNotNull('parent_id')->orWhere('code', '3300');
+        })->orderBy('code')->get();
 
         return Inertia::render('Transactions/CreateJournal', [
             'periods' => $periods,
@@ -124,6 +128,11 @@ class JournalEntryController extends Controller
 
         if (abs($totalDebit - $totalCredit) > 0.01) {
             return back()->with('error', 'Total Debit dan Total Kredit harus seimbang (Balance).');
+        }
+
+        $period = FiscalPeriod::findOrFail($request->fiscal_period_id);
+        if ($period->status === 'closed') {
+            return back()->with('error', "Periode Akuntansi '{$period->name}' sudah ditutup (Closed). Transaksi tidak dapat ditambahkan pada periode tertutup.");
         }
 
         DB::transaction(function () use ($request) {
@@ -174,7 +183,9 @@ class JournalEntryController extends Controller
 
         $journalEntry->load('lines.account');
         $periods = FiscalPeriod::orderByDesc('start_date')->get();
-        $accounts = Account::active()->whereNotNull('parent_id')->orderBy('code')->get();
+        $accounts = Account::active()->where(function ($q) {
+            $q->whereNotNull('parent_id')->orWhere('code', '3300');
+        })->orderBy('code')->get();
 
         return Inertia::render('Transactions/EditJournal', [
             'entry'    => $journalEntry,
@@ -205,6 +216,11 @@ class JournalEntryController extends Controller
 
         if (abs($totalDebit - $totalCredit) > 0.01) {
             return back()->with('error', 'Total Debit dan Total Kredit harus seimbang (Balance).');
+        }
+
+        $period = FiscalPeriod::findOrFail($request->fiscal_period_id);
+        if ($period->status === 'closed') {
+            return back()->with('error', "Periode Akuntansi '{$period->name}' sudah ditutup (Closed). Transaksi tidak dapat dipindahkan atau diubah pada periode tertutup.");
         }
 
         DB::transaction(function () use ($request, $journalEntry) {

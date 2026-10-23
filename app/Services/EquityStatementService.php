@@ -40,10 +40,14 @@ class EquityStatementService
         // ── Modal Awal ──
         // Hanya akun Modal Disetor (3110) dan Laba Ditahan (3300) sebelum periode ini.
         // Kecualikan 3120 (Prive) dan 3200 (Ikhtisar LR) — keduanya bukan komponen Modal Awal.
+        // Modal Accounts (3110 Modal Disetor & 3300 Laba Ditahan)
         $modalAccounts = Account::active()
             ->whereIn('code', ['3110', '3300'])
             ->get();
 
+        $modalAccountIds = $modalAccounts->pluck('id')->toArray();
+
+        // 1. Beginning Capital from periods BEFORE this period
         $beginningCapital = 0.0;
         foreach ($modalAccounts as $account) {
             $row    = $beforeTotals->get($account->id);
@@ -52,15 +56,42 @@ class EquityStatementService
             $beginningCapital += ($credit - $debit); // Ekuitas: Kredit normal
         }
 
-        // ONE bulk query: period-only totals (excluding closing entries)
+        // 2. Include any Opening Balance Journal (is_opening = true) in the current period into beginning capital
+        $openingModalLines = \App\Models\JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
+            ->where('journal_entries.is_opening', true)
+            ->where('journal_entries.status', 'posted')
+            ->whereNull('journal_entries.deleted_at')
+            ->whereIn('journal_entry_lines.account_id', $modalAccountIds)
+            ->selectRaw('journal_entry_lines.account_id, COALESCE(SUM(journal_entry_lines.credit), 0) - COALESCE(SUM(journal_entry_lines.debit), 0) as balance')
+            ->groupBy('journal_entry_lines.account_id')
+            ->pluck('balance', 'account_id');
+
+        $openingModalAmount = 0.0;
+        foreach ($modalAccounts as $account) {
+            $openingModalAmount += (float) ($openingModalLines[$account->id] ?? 0);
+        }
+        $beginningCapital += $openingModalAmount;
+
+        // ONE bulk query: period-only totals (excluding closing and opening entries)
         $periodTotals = $balanceSvc->getPeriodTotals($fiscalPeriodId, excludeClosing: true);
 
-        // ── Setoran Modal Tambahan (3110) selama periode ini saja ──
+        // ── Setoran Modal Tambahan (3110) selama periode ini saja (murni transaksi baru, bukan saldo awal) ──
         $modalAccount      = Account::where('code', '3110')->first();
-        $modalRow          = $modalAccount ? $periodTotals->get($modalAccount->id) : null;
-        $additionalCapital = $modalRow
-            ? ((float) $modalRow->total_credit - (float) $modalRow->total_debit)
-            : 0.0;
+        $additionalCapital = 0.0;
+        if ($modalAccount) {
+            $additionalCapital = (float) \App\Models\JournalEntryLine::query()
+                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+                ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
+                ->where('journal_entries.status', 'posted')
+                ->where('journal_entries.is_closing', false)
+                ->where('journal_entries.is_opening', false)
+                ->whereNull('journal_entries.deleted_at')
+                ->where('journal_entry_lines.account_id', $modalAccount->id)
+                ->selectRaw('COALESCE(SUM(journal_entry_lines.credit), 0) - COALESCE(SUM(journal_entry_lines.debit), 0) as balance')
+                ->value('balance') ?? 0.0;
+        }
 
         // ── Prive (3120) selama periode ini saja ──
         $priveAccount = Account::where('code', '3120')->first();
@@ -69,14 +100,14 @@ class EquityStatementService
             ? ((float) $priveRow->total_debit - (float) $priveRow->total_credit)
             : 0.0;
 
-        // ── Laba Ditahan dari periode sebelumnya (3300) ──
-        // Ini sudah termasuk dalam $beginningCapital di atas (via whereIn ['3110','3300']).
-        // Diekstrak terpisah hanya untuk ditampilkan di UI.
+        // ── Laba Ditahan (3300) ──
         $retainedAccount  = Account::where('code', '3300')->first();
         $retainedRow      = $retainedAccount ? $beforeTotals->get($retainedAccount->id) : null;
-        $retainedEarnings = $retainedRow
+        $beforeRetained   = $retainedRow
             ? ((float) $retainedRow->total_credit - (float) $retainedRow->total_debit)
             : 0.0;
+        $openingRetained  = $retainedAccount ? (float) ($openingModalLines[$retainedAccount->id] ?? 0) : 0.0;
+        $retainedEarnings = $beforeRetained + $openingRetained;
 
         // ── Modal Akhir ──
         // Modal Awal sudah mencakup 3110 + 3300 dari periode sebelumnya.

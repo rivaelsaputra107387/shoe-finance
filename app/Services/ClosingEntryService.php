@@ -52,12 +52,22 @@ class ClosingEntryService
 
         $ikhtisarAccount = Account::where('code', '3200')->firstOrFail();
         $modalAccount = Account::where('code', '3110')->firstOrFail();
-        $createdBy = auth()->id();
+        $createdBy = auth()->id() ?? 1;
         $closingDate = $period->end_date;
 
         $closingEntries = [];
 
         return DB::transaction(function () use ($period, $ikhtisarAccount, $modalAccount, $createdBy, $closingDate, $fiscalPeriodId) {
+            // Defensively cleanup any existing closing entries for this period (e.g. from prior reopen)
+            $existingClosing = JournalEntry::where('fiscal_period_id', $fiscalPeriodId)
+                ->where('is_closing', true)
+                ->get();
+
+            foreach ($existingClosing as $oldEntry) {
+                $oldEntry->lines()->delete();
+                $oldEntry->forceDelete();
+            }
+
             $closingEntries = [];
 
             // ── STEP 1: Close Revenue Accounts (4xxx, 71xx) ──
@@ -73,7 +83,7 @@ class ClosingEntryService
             $revenueLines = [];
 
             foreach ($revenueAccounts as $account) {
-                $balance = $account->getBalanceForPeriod($fiscalPeriodId);
+                $balance = $account->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
                 if (abs($balance) < 0.01) continue;
 
                 // Revenue has credit normal balance, so to close: debit the account
@@ -118,7 +128,7 @@ class ClosingEntryService
             $expenseLines = [];
 
             foreach ($expenseAccounts as $account) {
-                $balance = $account->getBalanceForPeriod($fiscalPeriodId);
+                $balance = $account->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
                 if (abs($balance) < 0.01) continue;
 
                 // Expense has debit normal balance, so to close: credit the account
@@ -178,7 +188,7 @@ class ClosingEntryService
             // ── STEP 4: Close Prive → Modal ──
             $priveAccount = Account::where('code', '3120')->first();
             if ($priveAccount) {
-                $priveBalance = $priveAccount->getBalanceForPeriod($fiscalPeriodId);
+                $priveBalance = $priveAccount->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
 
                 if (abs($priveBalance) > 0.01) {
                     $priveLines = [
@@ -202,20 +212,23 @@ class ClosingEntryService
             // ── STEP 5: Mark period as closed ──
             $period->update([
                 'status' => 'closed',
-                'closed_by' => auth()->id(),
+                'closed_by' => auth()->id() ?? $createdBy,
             ]);
 
-            // ── STEP 6: Create next period ──
+            // ── STEP 6: Create or retrieve next period ──
             $nextStart = Carbon::parse($period->end_date)->addDay();
             $nextEnd = $nextStart->copy()->endOfMonth();
             $nextName = $nextStart->translatedFormat('F Y');
 
-            $nextPeriod = FiscalPeriod::create([
-                'name' => $nextName,
-                'start_date' => $nextStart,
-                'end_date' => $nextEnd,
-                'status' => 'open',
-            ]);
+            $nextPeriod = FiscalPeriod::where('start_date', $nextStart)->first();
+            if (!$nextPeriod) {
+                $nextPeriod = FiscalPeriod::create([
+                    'name' => $nextName,
+                    'start_date' => $nextStart,
+                    'end_date' => $nextEnd,
+                    'status' => 'open',
+                ]);
+            }
 
             return [
                 'closing_entries' => $closingEntries,
@@ -233,18 +246,20 @@ class ClosingEntryService
         string $description,
         $date,
         int $fiscalPeriodId,
-        int $createdBy,
+        ?int $createdBy,
         array $lines
     ): JournalEntry {
+        $userId = $createdBy ?? auth()->id() ?? 1;
+
         $entry = JournalEntry::create([
             'entry_date' => $date,
             'reference' => 'JP-' . now()->format('YmdHis'),
             'description' => $description,
             'fiscal_period_id' => $fiscalPeriodId,
-            'created_by' => $createdBy,
+            'created_by' => $userId,
             'is_closing' => true,
             'status' => 'posted',
-            'posted_by' => $createdBy,
+            'posted_by' => $userId,
             'posted_at' => now(),
         ]);
 
