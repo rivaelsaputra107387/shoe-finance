@@ -4,7 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
-import { Upload, Sparkles, Search, ArrowUpRight, ArrowDownLeft, X, Trash2, Filter, RotateCcw, Calendar, ChevronDown, Plus, Pencil } from 'lucide-react';
+import { Upload, Sparkles, Search, ArrowUpRight, ArrowDownLeft, X, Trash2, Filter, RotateCcw, Calendar, ChevronDown, Plus, Pencil, FileText } from 'lucide-react';
 
 function MobileBankMutationCard({ item, isSelected, toggleSelectOne, formatRupiah, formatDate, handleEditOpen, promptGenerateDraft }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -124,10 +124,30 @@ export default function BankMutations({ mutations, filters }) {
         onConfirm: () => {},
     });
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, setError, clearErrors } = useForm({
         file: null,
         bank_source: 'AUTO',
     });
+    const [isDraggingFile, setIsDraggingFile] = useState(false);
+
+    // Backend hanya menerima CSV/TXT, jadi validasi ekstensi di sini juga untuk file hasil drag & drop
+    const selectImportFile = (file) => {
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['csv', 'txt'].includes(ext)) {
+            setData('file', null);
+            setError('file', 'File harus berformat CSV. Jika Anda menggunakan Excel, silakan pilih "Save As" -> "CSV (Comma delimited)".');
+            return;
+        }
+        clearErrors('file');
+        setData('file', file);
+    };
+
+    const handleFileDrop = (e) => {
+        e.preventDefault();
+        setIsDraggingFile(false);
+        selectImportFile(e.dataTransfer.files[0]);
+    };
 
     const addForm = useForm({
         date: '',
@@ -221,6 +241,10 @@ export default function BankMutations({ mutations, filters }) {
 
     const handleImportSubmit = (e) => {
         e.preventDefault();
+        if (!data.file) {
+            setError('file', 'Silakan pilih atau seret file CSV mutasi bank terlebih dahulu.');
+            return;
+        }
         post('/app/bank-mutations/import', {
             onSuccess: () => {
                 setImportModalOpen(false);
@@ -742,7 +766,12 @@ export default function BankMutations({ mutations, filters }) {
 
             {/* Import CSV Modal */}
             {importModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in"
+                    // Cegah browser membuka file jika dilepas di luar area drop
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => e.preventDefault()}
+                >
                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 max-w-md w-full shadow-2xl space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -772,15 +801,49 @@ export default function BankMutations({ mutations, filters }) {
 
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                                    File CSV / Excel Export
+                                    File CSV Mutasi Bank
                                 </label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => setData('file', e.target.files[0])}
-                                    accept=".csv,.txt"
-                                    required
-                                    className="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-950 dark:file:text-emerald-400 cursor-pointer"
-                                />
+                                <label
+                                    onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                                    onDragLeave={(e) => {
+                                        // Abaikan dragleave saat kursor berpindah ke elemen anak (ikon/teks)
+                                        if (!e.currentTarget.contains(e.relatedTarget)) setIsDraggingFile(false);
+                                    }}
+                                    onDrop={handleFileDrop}
+                                    className={`flex flex-col items-center justify-center gap-2 w-full px-4 py-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition-colors ${
+                                        isDraggingFile
+                                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
+                                            : errors.file
+                                                ? 'border-rose-300 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-950/20'
+                                                : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-emerald-400'
+                                    }`}
+                                >
+                                    <input
+                                        type="file"
+                                        onChange={(e) => { selectImportFile(e.target.files[0]); e.target.value = ''; }}
+                                        accept=".csv,.txt"
+                                        className="hidden"
+                                    />
+                                    {data.file ? (
+                                        <>
+                                            <FileText className="w-7 h-7 text-emerald-500" />
+                                            <span className="text-xs font-semibold text-gray-900 dark:text-white break-all">{data.file.name}</span>
+                                            <span className="text-[11px] text-gray-400">
+                                                {(data.file.size / 1024).toFixed(1)} KB · Klik atau seret file lain untuk mengganti
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className={`w-7 h-7 ${isDraggingFile ? 'text-emerald-500' : 'text-gray-400'}`} />
+                                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                                {isDraggingFile ? 'Lepaskan file di sini' : 'Seret & lepas file CSV di sini'}
+                                            </span>
+                                            <span className="text-[11px] text-gray-400">
+                                                atau <span className="font-semibold text-emerald-600 dark:text-emerald-400">klik untuk memilih file</span>
+                                            </span>
+                                        </>
+                                    )}
+                                </label>
                                 {errors.file && (
                                     <p className="mt-1.5 text-[11px] font-semibold text-rose-500">
                                         {errors.file}
