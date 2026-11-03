@@ -258,6 +258,10 @@ class AiAssistantController extends Controller
         $prompt .= "- Manajemen Akun → /app/users (khusus owner)\n";
         $prompt .= "- Audit Trail → /app/audit-trail (khusus owner/finance)\n\n";
 
+        if (!auth()->user()?->hasAnyRole(['owner', 'finance'])) {
+            $prompt .= "Pengguna ini tidak memiliki akses ke laporan keuangan, COA, dan periode. Jangan memberikan atau memperkirakan saldo, laba, dan angka laporan. Arahkan ke Owner atau Finance bila ditanya.\n\n";
+        }
+
         // ── LIVE DB SNAPSHOT ───────────────────────────────────────────────────
         $prompt .= "--- DATA REAL-TIME DATABASE (" . now()->format('d M Y H:i') . " WIB) ---\n\n";
         try {
@@ -303,6 +307,15 @@ class AiAssistantController extends Controller
                 $out .= "- {$month}: {$group->count()} draft\n";
             });
             $out .= "\n";
+        }
+
+        // Mutasi Bank
+        $pendingMut = BankMutation::where('status', 'pending')->count();
+        $out .= "### MUTASI BANK\n- Pending (belum dijurnalkan): {$pendingMut} item\n\n";
+
+        // Saldo dan laba hanya untuk Owner & Finance, selaras dengan hak akses laporan
+        if (!auth()->user()?->hasAnyRole(['owner', 'finance'])) {
+            return $out;
         }
 
         // Saldo Kas & Bank
@@ -420,10 +433,6 @@ class AiAssistantController extends Controller
             }
             $out .= "\n";
         }
-
-        // Mutasi Bank
-        $pendingMut = BankMutation::where('status', 'pending')->count();
-        $out .= "### MUTASI BANK\n- Pending (belum dijurnalkan): {$pendingMut} item\n\n";
 
         return $out;
     }

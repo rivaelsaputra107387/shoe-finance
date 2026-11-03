@@ -54,8 +54,10 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/journal-entries/{journalEntry}/update-lines', [JournalEntryController::class, 'updateLines'])->name('journal-entries.update-lines');
 
     Route::post('/journal-entries/bulk-submit', [JournalEntryController::class, 'bulkSubmit'])->name('journal-entries.bulk-submit');
-    Route::post('/journal-entries/bulk-approve', [JournalEntryController::class, 'bulkApprove'])->name('journal-entries.bulk-approve');
-    Route::post('/journal-entries/bulk-reject', [JournalEntryController::class, 'bulkReject'])->name('journal-entries.bulk-reject');
+    Route::middleware(['role:owner|finance'])->group(function () {
+        Route::post('/journal-entries/bulk-approve', [JournalEntryController::class, 'bulkApprove'])->name('journal-entries.bulk-approve');
+        Route::post('/journal-entries/bulk-reject', [JournalEntryController::class, 'bulkReject'])->name('journal-entries.bulk-reject');
+    });
     Route::post('/journal-entries/bulk-delete', [JournalEntryController::class, 'bulkDelete'])->name('journal-entries.bulk-delete');
 
     Route::get('/bank-mutations', [BankMutationController::class, 'index'])->name('bank-mutations.index');
@@ -77,37 +79,43 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
 
     Route::get('/draft-journals', [JournalEntryController::class, 'draftJournals'])->name('draft-journals.index');
 
-    // Laporan Keuangan
-    Route::get('/general-ledger', [ReportController::class, 'generalLedger'])->name('reports.general-ledger');
-    Route::get('/general-ledger/export', [ReportController::class, 'exportGeneralLedger'])->name('reports.general-ledger.export');
+    // Laporan Keuangan (Owner & Finance)
+    Route::middleware(['role:owner|finance'])->group(function () {
+        Route::get('/general-ledger', [ReportController::class, 'generalLedger'])->name('reports.general-ledger');
+        Route::get('/general-ledger/export', [ReportController::class, 'exportGeneralLedger'])->name('reports.general-ledger.export');
 
-    Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
-    Route::get('/trial-balance/export', [ReportController::class, 'exportTrialBalance'])->name('reports.trial-balance.export');
+        Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
+        Route::get('/trial-balance/export', [ReportController::class, 'exportTrialBalance'])->name('reports.trial-balance.export');
 
-    Route::get('/income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
-    Route::get('/income-statement/export', [ReportController::class, 'exportIncomeStatement'])->name('reports.income-statement.export');
+        Route::get('/income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
+        Route::get('/income-statement/export', [ReportController::class, 'exportIncomeStatement'])->name('reports.income-statement.export');
 
-    Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
-    Route::get('/balance-sheet/export', [ReportController::class, 'exportBalanceSheet'])->name('reports.balance-sheet.export');
+        Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+        Route::get('/balance-sheet/export', [ReportController::class, 'exportBalanceSheet'])->name('reports.balance-sheet.export');
 
-    Route::get('/equity-statement', [ReportController::class, 'equityStatement'])->name('reports.equity-statement');
-    Route::get('/equity-statement/export', [ReportController::class, 'exportEquityStatement'])->name('reports.equity-statement.export');
+        Route::get('/equity-statement', [ReportController::class, 'equityStatement'])->name('reports.equity-statement');
+        Route::get('/equity-statement/export', [ReportController::class, 'exportEquityStatement'])->name('reports.equity-statement.export');
 
-    Route::get('/cash-flow-statement', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
-    Route::get('/cash-flow-statement/export', [ReportController::class, 'exportCashFlow'])->name('reports.cash-flow.export');
+        Route::get('/cash-flow-statement', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
+        Route::get('/cash-flow-statement/export', [ReportController::class, 'exportCashFlow'])->name('reports.cash-flow.export');
+    });
 
     // Master Data & Pengaturan
     Route::get('/accounts', [MasterController::class, 'accounts'])->name('master.accounts');
-    Route::post('/accounts', [MasterController::class, 'storeAccount'])->name('master.accounts.store');
-    Route::put('/accounts/{account}', [MasterController::class, 'updateAccount'])->name('master.accounts.update');
-    Route::delete('/accounts/{account}', [MasterController::class, 'deleteAccount'])->name('master.accounts.delete');
-    Route::post('/accounts/bulk-delete', [MasterController::class, 'bulkDeleteAccounts'])->name('master.accounts.bulk-delete');
 
-    Route::get('/fiscal-periods', [MasterController::class, 'fiscalPeriods'])->name('master.fiscal-periods');
-    Route::post('/fiscal-periods', [MasterController::class, 'storeFiscalPeriod'])->name('master.fiscal-periods.store');
-    Route::put('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'updateFiscalPeriod'])->name('master.fiscal-periods.update');
-    Route::delete('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'deleteFiscalPeriod'])->name('master.fiscal-periods.destroy');
-    Route::post('/fiscal-periods/{fiscalPeriod}/reopen', [MasterController::class, 'reopenFiscalPeriod'])->name('master.fiscal-periods.reopen');
+    // Perubahan COA & seluruh Periode Akuntansi (Owner & Finance)
+    Route::middleware(['role:owner|finance'])->group(function () {
+        Route::post('/accounts', [MasterController::class, 'storeAccount'])->name('master.accounts.store');
+        Route::put('/accounts/{account}', [MasterController::class, 'updateAccount'])->name('master.accounts.update');
+        Route::delete('/accounts/{account}', [MasterController::class, 'deleteAccount'])->name('master.accounts.delete');
+        Route::post('/accounts/bulk-delete', [MasterController::class, 'bulkDeleteAccounts'])->name('master.accounts.bulk-delete');
+
+        Route::get('/fiscal-periods', [MasterController::class, 'fiscalPeriods'])->name('master.fiscal-periods');
+        Route::post('/fiscal-periods', [MasterController::class, 'storeFiscalPeriod'])->name('master.fiscal-periods.store');
+        Route::put('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'updateFiscalPeriod'])->name('master.fiscal-periods.update');
+        Route::delete('/fiscal-periods/{fiscalPeriod}', [MasterController::class, 'deleteFiscalPeriod'])->name('master.fiscal-periods.destroy');
+        Route::post('/fiscal-periods/{fiscalPeriod}/reopen', [MasterController::class, 'reopenFiscalPeriod'])->name('master.fiscal-periods.reopen');
+    });
 
     // Penutupan Periode & Saldo Awal (Owner & Finance)
     Route::middleware(['role:owner|finance'])->group(function () {

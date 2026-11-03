@@ -106,7 +106,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true; // All authenticated users can access; fine-grained control via Shield permissions
+        return $this->hasAnyRole(['owner', 'finance']);
     }
 
     // ───────────────────────────────────────
