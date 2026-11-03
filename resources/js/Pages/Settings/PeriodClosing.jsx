@@ -51,7 +51,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                         Penutupan Periode (Period Closing)
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Proses khusus Owner untuk memindahkan saldo akun nominal (Pendapatan & Beban) ke Modal melalui Jurnal Penutup dan mengaktifkan periode akuntansi berikutnya.
+                        Proses khusus Owner untuk memindahkan saldo akun nominal (Pendapatan & Beban) ke Laba Ditahan melalui Jurnal Penutup dan mengaktifkan periode akuntansi berikutnya.
                     </p>
                 </div>
 
@@ -113,7 +113,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                                 <div className={`text-2xl font-bold font-mono ${activePeriod.estimated_net_profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
                                     {formatRupiah(activePeriod.estimated_net_profit)}
                                 </div>
-                                <p className="text-[11px] text-gray-500">Akan dialokasikan ke Akun Modal</p>
+                                <p className="text-[11px] text-gray-500">Akan dialokasikan ke Akun Laba Ditahan</p>
                             </div>
 
                             {/* Metric 3: Readiness Status */}
@@ -240,7 +240,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
                             <ol className="list-decimal list-inside space-y-1 text-gray-600 dark:text-gray-400 text-[11px]">
                                 <li>Menutup seluruh saldo Akun Pendapatan ke Ikhtisar Laba Rugi.</li>
                                 <li>Menutup seluruh saldo Akun Beban ke Ikhtisar Laba Rugi.</li>
-                                <li>Memindahkan Laba Bersih <strong>{formatRupiah(activePeriod?.estimated_net_profit)}</strong> ke Akun Modal.</li>
+                                <li>Memindahkan Laba Bersih <strong>{formatRupiah(activePeriod?.estimated_net_profit)}</strong> ke Akun Laba Ditahan.</li>
                                 <li>Mengubah status periode dari OPEN menjadi CLOSED.</li>
                                 <li>Secara otomatis membuat & membuka periode akuntansi bulan berikutnya.</li>
                             </ol>

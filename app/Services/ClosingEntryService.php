@@ -17,8 +17,9 @@ class ClosingEntryService
      * Steps:
      * 1. Close all Revenue accounts (4xxx) → Ikhtisar Laba Rugi
      * 2. Close all Expense accounts (5xxx, 6xxx, 7200, 8xxx) → Ikhtisar Laba Rugi
-     * 3. Close Ikhtisar Laba Rugi → Modal
-     * 4. Close Prive (3120) → Modal (if any)
+     * 3. Close Ikhtisar Laba Rugi → Laba Ditahan (3300)
+     * 4. Close Prive (3120) → Laba Ditahan (3300), if any
+     *    Modal Disetor (3110) only changes through actual capital contributions.
      * 5. Mark period as closed
      * 6. Create next period
      *
@@ -51,13 +52,13 @@ class ClosingEntryService
         }
 
         $ikhtisarAccount = Account::where('code', '3200')->firstOrFail();
-        $modalAccount = Account::where('code', '3110')->firstOrFail();
+        $labaDitahanAccount = Account::where('code', '3300')->firstOrFail();
         $createdBy = auth()->id() ?? 1;
         $closingDate = $period->end_date;
 
         $closingEntries = [];
 
-        return DB::transaction(function () use ($period, $ikhtisarAccount, $modalAccount, $createdBy, $closingDate, $fiscalPeriodId) {
+        return DB::transaction(function () use ($period, $ikhtisarAccount, $labaDitahanAccount, $createdBy, $closingDate, $fiscalPeriodId) {
             // Defensively cleanup any existing closing entries for this period (e.g. from prior reopen)
             $existingClosing = JournalEntry::where('fiscal_period_id', $fiscalPeriodId)
                 ->where('is_closing', true)
@@ -86,22 +87,17 @@ class ClosingEntryService
                 $balance = $account->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
                 if (abs($balance) < 0.01) continue;
 
-                // Revenue has credit normal balance, so to close: debit the account
-                $revenueLines[] = [
-                    'account_id' => $account->id,
-                    'debit' => abs($balance),
-                    'credit' => 0,
-                ];
-                $totalRevenue += abs($balance);
+                // Revenue has credit normal balance, so to close: debit the account.
+                // A contra balance (e.g. returns) is negative and closes on the opposite side.
+                $revenueLines[] = $this->closingLine($account->id, $balance);
+                $totalRevenue += $balance;
             }
 
-            if ($totalRevenue > 0) {
+            if (!empty($revenueLines)) {
                 // Credit to Ikhtisar Laba Rugi
-                $revenueLines[] = [
-                    'account_id' => $ikhtisarAccount->id,
-                    'debit' => 0,
-                    'credit' => $totalRevenue,
-                ];
+                if (abs($totalRevenue) >= 0.01) {
+                    $revenueLines[] = $this->closingLine($ikhtisarAccount->id, -$totalRevenue);
+                }
 
                 $entry = $this->createClosingEntry(
                     'Jurnal Penutup - Menutup Akun Pendapatan',
@@ -131,22 +127,17 @@ class ClosingEntryService
                 $balance = $account->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
                 if (abs($balance) < 0.01) continue;
 
-                // Expense has debit normal balance, so to close: credit the account
-                $expenseLines[] = [
-                    'account_id' => $account->id,
-                    'debit' => 0,
-                    'credit' => abs($balance),
-                ];
-                $totalExpenses += abs($balance);
+                // Expense has debit normal balance, so to close: credit the account.
+                // A contra balance (e.g. refunds) is negative and closes on the opposite side.
+                $expenseLines[] = $this->closingLine($account->id, -$balance);
+                $totalExpenses += $balance;
             }
 
-            if ($totalExpenses > 0) {
+            if (!empty($expenseLines)) {
                 // Debit Ikhtisar Laba Rugi
-                $expenseLines[] = [
-                    'account_id' => $ikhtisarAccount->id,
-                    'debit' => $totalExpenses,
-                    'credit' => 0,
-                ];
+                if (abs($totalExpenses) >= 0.01) {
+                    $expenseLines[] = $this->closingLine($ikhtisarAccount->id, $totalExpenses);
+                }
 
                 $entry = $this->createClosingEntry(
                     'Jurnal Penutup - Menutup Akun Beban',
@@ -158,25 +149,18 @@ class ClosingEntryService
                 $closingEntries[] = $entry;
             }
 
-            // ── STEP 3: Close Ikhtisar Laba Rugi → Modal ──
+            // ── STEP 3: Close Ikhtisar Laba Rugi → Laba Ditahan ──
             $ikhtisarBalance = $totalRevenue - $totalExpenses; // Positive = profit, negative = loss
 
-            if (abs($ikhtisarBalance) > 0.01) {
-                $ikhtisarLines = [];
-
-                if ($ikhtisarBalance > 0) {
-                    // Profit: Debit Ikhtisar LR, Credit Modal
-                    $ikhtisarLines[] = ['account_id' => $ikhtisarAccount->id, 'debit' => $ikhtisarBalance, 'credit' => 0];
-                    $ikhtisarLines[] = ['account_id' => $modalAccount->id, 'debit' => 0, 'credit' => $ikhtisarBalance];
-                } else {
-                    // Loss: Credit Ikhtisar LR, Debit Modal
-                    $loss = abs($ikhtisarBalance);
-                    $ikhtisarLines[] = ['account_id' => $ikhtisarAccount->id, 'debit' => 0, 'credit' => $loss];
-                    $ikhtisarLines[] = ['account_id' => $modalAccount->id, 'debit' => $loss, 'credit' => 0];
-                }
+            if (abs($ikhtisarBalance) >= 0.01) {
+                // Profit: Debit Ikhtisar LR, Credit Laba Ditahan. Loss: the reverse.
+                $ikhtisarLines = [
+                    $this->closingLine($ikhtisarAccount->id, $ikhtisarBalance),
+                    $this->closingLine($labaDitahanAccount->id, -$ikhtisarBalance),
+                ];
 
                 $entry = $this->createClosingEntry(
-                    'Jurnal Penutup - Menutup Ikhtisar Laba Rugi ke Modal',
+                    'Jurnal Penutup - Menutup Ikhtisar Laba Rugi ke Laba Ditahan',
                     $closingDate,
                     $fiscalPeriodId,
                     $createdBy,
@@ -185,21 +169,21 @@ class ClosingEntryService
                 $closingEntries[] = $entry;
             }
 
-            // ── STEP 4: Close Prive → Modal ──
+            // ── STEP 4: Close Prive → Laba Ditahan ──
             $priveAccount = Account::where('code', '3120')->first();
             if ($priveAccount) {
                 $priveBalance = $priveAccount->getBalanceForPeriod($fiscalPeriodId, excludeClosing: true);
 
-                if (abs($priveBalance) > 0.01) {
+                if (abs($priveBalance) >= 0.01) {
                     $priveLines = [
                         // Credit Prive (has debit normal balance)
-                        ['account_id' => $priveAccount->id, 'debit' => 0, 'credit' => abs($priveBalance)],
-                        // Debit Modal
-                        ['account_id' => $modalAccount->id, 'debit' => abs($priveBalance), 'credit' => 0],
+                        $this->closingLine($priveAccount->id, -$priveBalance),
+                        // Debit Laba Ditahan
+                        $this->closingLine($labaDitahanAccount->id, $priveBalance),
                     ];
 
                     $entry = $this->createClosingEntry(
-                        'Jurnal Penutup - Menutup Prive ke Modal',
+                        'Jurnal Penutup - Menutup Prive ke Laba Ditahan',
                         $closingDate,
                         $fiscalPeriodId,
                         $createdBy,
@@ -237,6 +221,20 @@ class ClosingEntryService
                 'new_period' => $nextPeriod,
             ];
         });
+    }
+
+    /**
+     * Build a journal line from a signed amount: positive debits, negative credits.
+     */
+    private function closingLine(int $accountId, float $amount): array
+    {
+        $amount = round($amount, 2);
+
+        return [
+            'account_id' => $accountId,
+            'debit' => $amount > 0 ? $amount : 0,
+            'credit' => $amount < 0 ? abs($amount) : 0,
+        ];
     }
 
     /**

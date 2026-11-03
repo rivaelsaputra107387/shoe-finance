@@ -26,3 +26,6 @@ yarn-error.log
 *.md
 # Tetapi tetap biarkan README.md jika Anda menginginkannya
 !README.md
+
+# Dump DB production
+/sql_finlog_shoew.sql
