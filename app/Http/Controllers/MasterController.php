@@ -74,7 +74,7 @@ class MasterController extends Controller
 
     public function deleteAccount(Account $account)
     {
-        if ($account->journalLines()->count() > 0) {
+        if ($account->journalEntryLines()->count() > 0) {
             return back()->with('error', 'Akun ini tidak dapat dihapus karena sudah memiliki transaksi jurnal.');
         }
 
@@ -96,7 +96,7 @@ class MasterController extends Controller
         foreach ($request->ids as $id) {
             $account = Account::find($id);
             if ($account) {
-                if ($account->journalLines()->count() > 0) {
+                if ($account->journalEntryLines()->count() > 0) {
                     $failedCount++;
                     continue;
                 }
