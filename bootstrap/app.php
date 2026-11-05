@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'active-user' => \App\Http\Middleware\EnsureUserIsActive::class,
             'unit' => \App\Http\Middleware\EnsureActiveUnit::class,
+            'consolidated' => \App\Http\Middleware\EnsureCanViewConsolidated::class,
             'purchase-request-unit' => \App\Http\Middleware\EnsurePurchaseRequestUnit::class,
         ]);
 

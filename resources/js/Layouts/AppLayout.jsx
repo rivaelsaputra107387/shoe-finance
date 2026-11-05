@@ -89,6 +89,15 @@ export default function AppLayout({ children, title }) {
             ].filter(i => i.show),
         },
         {
+            group: 'Laporan Gabungan',
+            items: [
+                { name: 'Laba Rugi Gabungan', href: '/app/consolidated/income-statement', icon: TrendingUp, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Neraca Gabungan', href: '/app/consolidated/balance-sheet', icon: Scale, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Perubahan Ekuitas Gabungan', href: '/app/consolidated/equity-statement', icon: PieChart, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Cek Kecocokan Antar Unit', href: '/app/consolidated/reconciliation', icon: ShieldCheck, show: Boolean(unit?.canViewConsolidated) },
+            ].filter(i => i.show),
+        },
+        {
             group: 'Master & Pengaturan',
             items: [
                 { name: 'Chart of Accounts', href: '/app/accounts', icon: ListTree, show: isOwnerOrFinance },
@@ -141,7 +150,7 @@ export default function AppLayout({ children, title }) {
                             <img src="/logo.png" alt="Shoe Workshop Logo" className="h-8 w-auto object-contain" />
                             <div className="flex flex-col">
                                 <span className="font-extrabold tracking-tight text-gray-900 dark:text-white leading-none text-sm">
-                                    {unit?.active?.name || 'Shoe Workshop'}
+                                    {unit?.active?.name || 'Mode Gabungan'}
                                 </span>
                                 <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">
                                     SIA Finance

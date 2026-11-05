@@ -171,7 +171,7 @@ class UnitIsolationTest extends MultiUnitTestCase
         foreach (Route::getRoutes() as $route) {
             $uri = $route->uri();
 
-            if (! str_starts_with($uri, 'app/') || in_array($uri, $exempt, true)) {
+            if (! str_starts_with($uri, 'app/') || in_array($uri, $exempt, true) || str_starts_with($uri, 'app/consolidated/')) {
                 continue;
             }
 

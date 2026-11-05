@@ -1,13 +1,13 @@
 import React from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Building2, Clock, LogOut } from 'lucide-react';
+import { Building2, Clock, LogOut, Scale } from 'lucide-react';
 
 const STATUS_LABELS = {
     persiapan: 'Persiapan',
     nonaktif: 'Nonaktif, hanya baca',
 };
 
-export default function Select({ units, activeUnitId }) {
+export default function Select({ units, activeUnitId, canViewConsolidated }) {
     const { auth } = usePage().props;
 
     return (
@@ -69,6 +69,13 @@ export default function Select({ units, activeUnitId }) {
                             </button>
                         ))}
                     </div>
+                )}
+
+                {canViewConsolidated && (
+                    <a href="/app/consolidated/income-statement" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold shadow-sm">
+                        <Scale className="w-4 h-4" />
+                        Laporan Gabungan
+                    </a>
                 )}
             </div>
         </div>

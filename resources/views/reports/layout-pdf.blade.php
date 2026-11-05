@@ -145,7 +145,7 @@
             @endif
         </div>
         <div class="header-content">
-            <h1>{{ strtoupper(app(\App\Support\UnitContext::class)->current()?->name ?? 'Shoe Workshop') }}</h1>
+            <h1>{{ $heading ?? strtoupper(app(\App\Support\UnitContext::class)->current()?->name ?? 'Shoe Workshop') }}</h1>
             <h2>{{ $title ?? 'LAPORAN KEUANGAN' }}</h2>
             <p>{{ $subtitle ?? 'Periode: ' . ($data['period_name'] ?? 'Semua Periode') }}</p>
         </div>

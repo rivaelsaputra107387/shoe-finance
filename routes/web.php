@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankMutationController;
+use App\Http\Controllers\ConsolidatedReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\MasterController;
@@ -28,6 +29,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'active-user'])->prefix('app')->group(function () {
     Route::get('/units', [UnitSelectionController::class, 'index'])->name('units.index');
     Route::post('/units/select', [UnitSelectionController::class, 'select'])->name('units.select');
+});
+
+// Laporan Gabungan membaca semua unit, jadi tidak memakai unit aktif
+Route::middleware(['auth', 'active-user', 'consolidated'])->prefix('app/consolidated')->group(function () {
+    Route::get('/reconciliation', [ConsolidatedReportController::class, 'reconciliation'])->name('consolidated.reconciliation');
+    Route::get('/{report}', [ConsolidatedReportController::class, 'show'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement'])->name('consolidated.show');
+    Route::get('/{report}/export', [ConsolidatedReportController::class, 'export'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement'])->name('consolidated.export');
 });
 
 // Authenticated Application Routes

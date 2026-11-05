@@ -12,7 +12,12 @@ export default function UnitSwitcher() {
     const available = unit?.available || [];
 
     if (!active) {
-        return null;
+        return (
+            <a href="/app/units" className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-100">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Mode Gabungan · Buka Pembukuan</span>
+            </a>
+        );
     }
 
     if (available.length <= 1) {
