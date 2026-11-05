@@ -15,7 +15,7 @@ abstract class TestCase extends BaseTestCase
         $connection = config('database.default');
         $database = config("database.connections.{$connection}.database");
 
-        if ($database !== 'finlog_test') {
+        if (! is_string($database) || ! str_starts_with($database, 'finlog_test')) {
             throw new RuntimeException("Tes dibatalkan: database '{$database}' bukan database tes.");
         }
 
