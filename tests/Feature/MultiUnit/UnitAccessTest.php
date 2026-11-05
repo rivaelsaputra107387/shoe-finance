@@ -24,7 +24,7 @@ class UnitAccessTest extends MultiUnitTestCase
     {
         $owner = $this->userWithRole('owner');
 
-        Unit::create(['code' => 'baru', 'name' => 'Baru', 'database' => 'finlog_test_baru', 'status' => 'persiapan', 'books_start_date' => '2026-10-01']);
+        Unit::create(['code' => 'baru', 'name' => 'Baru', 'database' => 'finlog_test_baru', 'status' => 'persiapan', 'books_start_date' => '2026-10-01', 'intercompany_slot' => 9]);
 
         $this->assertContains('baru', $owner->fresh()->accessibleUnits()->pluck('code')->all());
     }

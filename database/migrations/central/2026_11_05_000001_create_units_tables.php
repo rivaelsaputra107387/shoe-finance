@@ -20,6 +20,8 @@ return new class extends Migration
             $table->timestamp('activated_at')->nullable();
             $table->timestamp('deactivated_at')->nullable();
             $table->integer('sort_order')->default(0);
+            // Menentukan nomor akun antar unit milik unit ini (Lampiran B PRD).
+            $table->unsignedTinyInteger('intercompany_slot')->unique();
             $table->timestamps();
         });
 

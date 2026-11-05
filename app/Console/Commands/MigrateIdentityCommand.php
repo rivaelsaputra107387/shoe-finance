@@ -44,6 +44,7 @@ class MigrateIdentityCommand extends Command
             'status' => Unit::STATUS_ACTIVE,
             'books_start_date' => $this->option('start'),
             'activated_at' => now(),
+            'intercompany_slot' => (int) Unit::query()->max('intercompany_slot') + 1,
         ]);
 
         $source = DB::connection($context->connectionName($unit));

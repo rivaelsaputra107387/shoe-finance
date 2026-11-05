@@ -65,12 +65,17 @@ class Account extends Model
         'cash_flow_category',
         'parent_id',
         'is_active',
+        'is_locked',
+        'is_intercompany',
+        'counterparty_unit_code',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_locked' => 'boolean',
+            'is_intercompany' => 'boolean',
         ];
     }
 

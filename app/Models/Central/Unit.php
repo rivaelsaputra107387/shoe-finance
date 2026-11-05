@@ -28,6 +28,7 @@ class Unit extends Model
         'activated_at',
         'deactivated_at',
         'sort_order',
+        'intercompany_slot',
     ];
 
     protected function casts(): array

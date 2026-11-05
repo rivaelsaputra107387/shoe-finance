@@ -127,7 +127,7 @@ export default function FiscalPeriods({ periods }) {
                                             {p.status !== 'closed' && (
                                                 <button
                                                     onClick={() => {
-                                                        if (confirm(`Apakah Anda yakin ingin menghapus periode ${p.name}? Aksi ini tidak dapat dibatalkan.`)) {
+                                                        if (confirm(`Periode akan dihapus dari semua unit. Apakah Anda yakin ingin menghapus periode ${p.name}? Aksi ini tidak dapat dibatalkan.`)) {
                                                             router.delete(`/app/fiscal-periods/${p.id}`);
                                                         }
                                                     }}
@@ -152,23 +152,26 @@ export default function FiscalPeriods({ periods }) {
                     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 max-w-md w-full shadow-2xl space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                                {editingPeriod ? 'Edit Periode Akuntansi' : 'Tambah Periode Akuntansi'}
+                                {editingPeriod ? 'Ubah Status Periode' : 'Tambah Periode untuk Semua Unit'}
                             </h3>
                             <button onClick={() => { setCreateModalOpen(false); setEditingPeriod(null); }} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
                         </div>
 
                         <form onSubmit={editingPeriod ? handleEditSubmit : handleCreateSubmit} className="space-y-4 text-xs">
+                            {editingPeriod && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Nama dan tanggal periode sama di semua unit, jadi yang bisa diubah di sini hanya statusnya.</p>
+                            )}
                             <div>
                                 <label className="block font-semibold mb-1">Nama Periode</label>
-                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Misal: Juli 2026" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
+                                <input type="text" value={data.name} disabled={Boolean(editingPeriod)} onChange={(e) => setData('name', e.target.value)} required placeholder="Misal: Juli 2026" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
                             <div>
                                 <label className="block font-semibold mb-1">Tanggal Mulai</label>
-                                <input type="date" value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} required className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
+                                <input type="date" value={data.start_date} disabled={Boolean(editingPeriod)} onChange={(e) => setData('start_date', e.target.value)} required className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
                             <div>
                                 <label className="block font-semibold mb-1">Tanggal Selesai</label>
-                                <input type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} required className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
+                                <input type="date" value={data.end_date} disabled={Boolean(editingPeriod)} onChange={(e) => setData('end_date', e.target.value)} required className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
                             {editingPeriod && (
                                 <div>

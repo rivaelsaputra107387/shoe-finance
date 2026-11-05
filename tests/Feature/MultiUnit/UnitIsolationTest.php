@@ -55,7 +55,14 @@ class UnitIsolationTest extends MultiUnitTestCase
     public function test_route_binding_reads_the_active_unit(): void
     {
         $inA = $this->journalIn($this->unitA, 'Jurnal milik A', 100);
-        $this->journalIn($this->unitB, 'Jurnal milik B', 200);
+        $this->context()->run($this->unitB, fn () => JournalEntry::forceCreate([
+            'id' => $inA->id,
+            'entry_date' => FiscalPeriod::value('start_date'),
+            'description' => 'Jurnal milik B',
+            'fiscal_period_id' => FiscalPeriod::value('id'),
+            'created_by' => 1,
+            'status' => 'posted',
+        ]));
         $owner = $this->userWithRole('owner');
 
         // ID sama di dua unit menghasilkan jurnal unit yang aktif.

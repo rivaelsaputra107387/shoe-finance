@@ -6,6 +6,7 @@ use App\Models\Central\Unit;
 use App\Models\User;
 use App\Support\UnitContext;
 use Database\Seeders\AccountSeeder;
+use Database\Seeders\CoaMasterSeeder;
 use Database\Seeders\FiscalPeriodSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -78,7 +79,7 @@ abstract class MultiUnitTestCase extends TestCase
 
         $this->assertTestDatabase(config('database.connections.central.database'));
         Artisan::call('migrate:fresh', ['--database' => 'central', '--path' => 'database/migrations/central', '--force' => true]);
-        $this->seed(RolePermissionSeeder::class);
+        $this->seed([RolePermissionSeeder::class, CoaMasterSeeder::class]);
 
         foreach (self::UNITS as $index => $code) {
             $database = "finlog_test_{$code}";
@@ -91,6 +92,7 @@ abstract class MultiUnitTestCase extends TestCase
                 'status' => Unit::STATUS_ACTIVE,
                 'books_start_date' => '2026-07-01',
                 'sort_order' => $index,
+                'intercompany_slot' => $index + 1,
             ]);
 
             Artisan::call('migrate:fresh', ['--database' => $context->connectionName($unit), '--path' => 'database/migrations/unit', '--force' => true]);
