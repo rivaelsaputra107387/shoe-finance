@@ -42,7 +42,7 @@ export default function PeriodClosing({ activePeriod, closedPeriods }) {
 
     return (
         <AppLayout title="Penutupan Periode Akuntansi">
-            <Head title="Penutupan Periode - SIA Shoe Workshop" />
+            <Head title="Penutupan Periode" />
 
             <div className="space-y-8">
                 {/* Header Title */}

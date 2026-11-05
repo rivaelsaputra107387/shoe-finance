@@ -204,7 +204,7 @@ export default function DraftJournals({ entries }) {
 
     return (
         <AppLayout title="Draft Jurnal">
-            <Head title="Draft Jurnal - SIA Shoe Workshop" />
+            <Head title="Draft Jurnal" />
 
             <div className="space-y-6">
                 <div>

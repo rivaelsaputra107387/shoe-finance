@@ -1,4 +1,5 @@
 import React from 'react';
+import { currentUnitName } from '@/Utils/unitContext';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import {
@@ -96,7 +97,7 @@ export default function Dashboard({
 
     return (
         <AppLayout title="Dashboard Overview">
-            <Head title="Dashboard - SIA Shoe Workshop" />
+            <Head title="Dashboard" />
 
             <div className="space-y-8">
                 {/* Header Banner */}
@@ -105,7 +106,7 @@ export default function Dashboard({
                         <div className="space-y-2">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold tracking-wide">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                <span>Sistem Informasi Akuntansi Shoe Workshop</span>
+                                <span>Sistem Informasi Akuntansi {currentUnitName()}</span>
                             </div>
                             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
                                 Ringkasan Keuangan Operasional

@@ -36,7 +36,7 @@ export default function Login() {
 
     return (
         <>
-            <Head title="Login - SIA Shoe Workshop" />
+            <Head title="Login" />
             <div className="min-h-screen flex font-sans bg-white">
                 {/* Left Branding Side - Solid Green with Glassmorphism Cards */}
                 <div className="hidden lg:flex lg:w-1/2 bg-[#1a4a38] p-12 flex-col relative overflow-hidden">

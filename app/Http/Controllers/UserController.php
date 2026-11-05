@@ -159,7 +159,7 @@ class UserController extends Controller
         }
 
         // Dinonaktifkan, bukan dihapus: jurnal di semua unit masih menyimpan ID pengguna ini.
-        $user->update(['deactivated_at' => now()]);
+        $user->forceFill(['deactivated_at' => now()])->save();
         $user->units()->detach();
 
         AccessAudit::record('user.deactivated', 'user', $user->id, ['email' => $user->email]);

@@ -6,7 +6,7 @@ import CustomSelect from '@/Components/CustomSelect';
 import { Search, Plus, Pencil, Trash2, X, Shield, Phone, Mail, User } from 'lucide-react';
 import { formatPhone } from '@/Utils/format';
 
-export default function Users({ users, roles, filters }) {
+export default function Users({ users, roles, units, filters }) {
     const { auth } = usePage().props;
     const userRoles = auth?.user?.roles || [];
     const isFinanceOnly = userRoles.includes('finance') && !userRoles.includes('owner');
@@ -26,7 +26,14 @@ export default function Users({ users, roles, filters }) {
         role: '',
         password: '',
         password_confirmation: '',
+        unit_ids: [],
     });
+
+    const toggleUnit = (unitId) => {
+        setData('unit_ids', data.unit_ids.includes(unitId)
+            ? data.unit_ids.filter((id) => id !== unitId)
+            : [...data.unit_ids, unitId]);
+    };
 
     const executeFilter = (newSearch = search, newRole = role) => {
         router.get('/app/users', { search: newSearch, role: newRole }, { preserveState: true, replace: true });
@@ -52,6 +59,7 @@ export default function Users({ users, roles, filters }) {
             role: user.roles[0]?.name || '',
             password: '',
             password_confirmation: '',
+            unit_ids: (user.units || []).map((item) => item.id).filter((id) => units.some((item) => item.id === id)),
         });
         clearErrors();
         setModalOpen(true);
@@ -89,7 +97,7 @@ export default function Users({ users, roles, filters }) {
 
     return (
         <AppLayout title="Manajemen Akun">
-            <Head title="Manajemen Akun - SIA Shoe Workshop" />
+            <Head title="Manajemen Akun" />
 
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -152,6 +160,7 @@ export default function Users({ users, roles, filters }) {
                                     <th className="py-3 px-4">User</th>
                                     <th className="py-3 px-4">Kontak</th>
                                     <th className="py-3 px-4">Role</th>
+                                    <th className="py-3 px-4">Akses Unit</th>
                                     <th className="py-3 px-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
@@ -186,6 +195,11 @@ export default function Users({ users, roles, filters }) {
                                                     {user.roles[0]?.name || 'No Role'}
                                                 </span>
                                             </td>
+                                            <td className="py-3 px-4 text-xs text-gray-600 dark:text-gray-400">
+                                                {user.roles.some((r) => r.name === 'owner')
+                                                    ? 'Semua unit'
+                                                    : (user.units || []).map((item) => item.name).join(', ') || '-'}
+                                            </td>
                                             <td className="py-3 px-4 text-right">
                                                 {user.id !== auth.user.id ? (
                                                     (!isFinanceOnly || user.roles.some(r => r.name === 'staff')) ? (
@@ -200,7 +214,7 @@ export default function Users({ users, roles, filters }) {
                                                             <button
                                                                 onClick={() => handleDeleteClick(user)}
                                                                 className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                                                                title="Hapus"
+                                                                title="Nonaktifkan"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -220,7 +234,7 @@ export default function Users({ users, roles, filters }) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="py-8 text-center text-gray-500 text-xs">
+                                        <td colSpan="5" className="py-8 text-center text-gray-500 text-xs">
                                             Tidak ada data user.
                                         </td>
                                     </tr>
@@ -305,6 +319,23 @@ export default function Users({ users, roles, filters }) {
                                 )}
                                 {errors.role && <p className="text-rose-500 text-xs mt-1">{errors.role}</p>}
                             </div>
+                            <div>
+                                <span className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Akses Unit</span>
+                                <div className="space-y-2">
+                                    {units.map((item) => (
+                                        <label key={item.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.unit_ids.includes(item.id)}
+                                                onChange={() => toggleUnit(item.id)}
+                                                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                            />
+                                            {item.name}
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.unit_ids && <p className="text-rose-500 text-xs mt-1">{errors.unit_ids}</p>}
+                            </div>
                             <div className="pt-2">
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Password {editMode && <span className="text-xs font-normal text-gray-500">(Kosongkan jika tidak ingin diubah)</span>}</label>
                                 <input
@@ -345,16 +376,16 @@ export default function Users({ users, roles, filters }) {
                         <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mx-auto mb-4">
                             <Trash2 className="w-6 h-6 text-rose-600 dark:text-rose-500" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Hapus Pengguna</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Nonaktifkan Pengguna</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                            Apakah Anda yakin ingin menghapus akun <strong>{selectedUser?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+                            Nonaktifkan akun <strong>{selectedUser?.name}</strong>? Pengguna ini tidak bisa login lagi, tetapi namanya tetap tercatat pada jurnal lama.
                         </p>
                         <div className="flex justify-center gap-3">
                             <button onClick={() => setDeleteModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
                                 Batal
                             </button>
                             <button onClick={confirmDelete} className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-md transition-colors">
-                                Ya, Hapus
+                                Ya, Nonaktifkan
                             </button>
                         </div>
                     </div>

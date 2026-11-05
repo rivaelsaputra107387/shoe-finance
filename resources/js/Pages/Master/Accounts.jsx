@@ -123,7 +123,7 @@ export default function Accounts({ accounts, parents, filters }) {
 
     return (
         <AppLayout title="Chart of Accounts (COA)">
-            <Head title="Chart of Accounts - SIA Shoe Workshop" />
+            <Head title="Chart of Accounts" />
 
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
