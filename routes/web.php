@@ -10,12 +10,13 @@ use App\Http\Controllers\OpeningBalanceController;
 use App\Http\Controllers\PeriodClosingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UnitSelectionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect Root to Application Dashboard or Login
 Route::get('/', function () {
-    return auth()->check() ? redirect('/app/dashboard') : redirect('/login');
+    return auth()->check() ? redirect('/app/units') : redirect('/login');
 });
 
 // Guest Routes
@@ -23,8 +24,14 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Pemilihan unit, sebelum ada unit aktif
+Route::middleware(['auth', 'active-user'])->prefix('app')->group(function () {
+    Route::get('/units', [UnitSelectionController::class, 'index'])->name('units.index');
+    Route::post('/units/select', [UnitSelectionController::class, 'select'])->name('units.select');
+});
+
 // Authenticated Application Routes
-Route::middleware(['auth'])->prefix('app')->group(function () {
+Route::middleware(['auth', 'active-user', 'unit'])->prefix('app')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -73,8 +80,10 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::get('/transaction-archive', [BankMutationController::class, 'archive'])->name('transaction-archive.index');
     
     // Integrasi Belanja Workshop
-    Route::get('/purchase-requests', [\App\Http\Controllers\PurchaseRequestWebController::class, 'index'])->name('purchase-requests.index');
-    Route::post('/purchase-requests/{purchaseRequest}/status', [\App\Http\Controllers\PurchaseRequestStatusController::class, 'updateStatus'])->name('purchase-requests.update-status');
+    Route::middleware(['purchase-request-unit'])->group(function () {
+        Route::get('/purchase-requests', [\App\Http\Controllers\PurchaseRequestWebController::class, 'index'])->name('purchase-requests.index');
+        Route::post('/purchase-requests/{purchaseRequest}/status', [\App\Http\Controllers\PurchaseRequestStatusController::class, 'updateStatus'])->name('purchase-requests.update-status');
+    });
 
 
     Route::get('/draft-journals', [JournalEntryController::class, 'draftJournals'])->name('draft-journals.index');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\UnitContext;
 use App\Models\Account;
 use App\Models\BankMutation;
 use App\Models\FiscalPeriod;
@@ -77,7 +78,7 @@ class DashboardController extends Controller
         // 2. Cash & Balance Stats (Owner & Finance)
         $cashBalanceStats = null;
         if ($isOwnerOrFinance && $period) {
-            $cashBalanceStats = Cache::remember('inertia_cash_balance_stats_' . $period->id, 600, function () use ($period) {
+            $cashBalanceStats = Cache::remember(app(UnitContext::class)->cacheKey('inertia_cash_balance_stats_' . $period->id), 600, function () use ($period) {
                 // FIX: Gunakan kumulatif (getCumulativeTotalsUpTo) bukan period-only.
                 // Saldo Kas/Bank/Piutang/Hutang adalah saldo akumulasi, bukan mutasi satu periode.
                 $balanceSvc   = new AccountBalanceService();
@@ -139,7 +140,7 @@ class DashboardController extends Controller
         // 3. Analytics Charts Data (Owner & Finance)
         $charts = null;
         if ($isOwnerOrFinance) {
-            $cacheKey = 'inertia_dashboard_charts_' . ($period ? $period->id : 'null');
+            $cacheKey = app(UnitContext::class)->cacheKey('inertia_dashboard_charts_' . ($period ? $period->id : 'null'));
             $charts = Cache::remember($cacheKey, 600, function () use ($period) {
                 // Last 6 fiscal periods up to selected period
                 $query = FiscalPeriod::orderBy('start_date', 'desc')->limit(6);
@@ -237,7 +238,7 @@ class DashboardController extends Controller
         // 3b. Financial Report Summary (Owner & Finance only)
         $financialSummary = null;
         if ($isOwnerOrFinance && $period) {
-            $cacheKey = 'inertia_financial_summary_' . $period->id;
+            $cacheKey = app(UnitContext::class)->cacheKey('inertia_financial_summary_' . $period->id);
             $financialSummary = Cache::remember($cacheKey, 600, function () use ($period) {
                 try {
                     // Laba Rugi

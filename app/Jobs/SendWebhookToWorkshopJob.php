@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Models\Central\Unit;
+use App\Support\UnitContext;
 use App\Models\PurchaseRequest;
 use App\Models\WebhookEventLog;
 use App\Services\FinlogWebhookSenderService;
@@ -9,30 +11,36 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 
 class SendWebhookToWorkshopJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
-    public $purchaseRequest;
     public $tries = 3;
     public array $backoff = [60, 300, 900]; // 1 min, 5 min, 15 min
 
     /**
      * Create a new job instance.
      */
-    public function __construct(PurchaseRequest $purchaseRequest)
+    public function __construct(public int $purchaseRequestId, public string $unitCode)
     {
-        $this->purchaseRequest = $purchaseRequest;
     }
 
     /**
      * Execute the job.
      */
-    public function handle(FinlogWebhookSenderService $sender): void
+    public function handle(FinlogWebhookSenderService $sender, UnitContext $context): void
     {
-        $log = $this->purchaseRequest->webhookLogs()->create([
+        // Kirim ID dan kode unit, bukan model, karena pengajuan hanya bisa dimuat setelah konteks unit aktif.
+        $context->run(
+            Unit::where('code', $this->unitCode)->firstOrFail(),
+            fn () => $this->send($sender, PurchaseRequest::findOrFail($this->purchaseRequestId))
+        );
+    }
+
+    private function send(FinlogWebhookSenderService $sender, PurchaseRequest $purchaseRequest): void
+    {
+        $log = $purchaseRequest->webhookLogs()->create([
             'event_type' => 'purchase_request.status_updated',
             'status' => 'PENDING',
             'payload' => [], 
@@ -41,7 +49,7 @@ class SendWebhookToWorkshopJob implements ShouldQueue
         ]);
 
         try {
-            $result = $sender->sendStatusUpdate($this->purchaseRequest);
+            $result = $sender->sendStatusUpdate($purchaseRequest);
             
             $log->update([
                 'payload' => $result['payload'],

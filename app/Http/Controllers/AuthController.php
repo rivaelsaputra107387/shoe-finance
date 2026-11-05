@@ -12,7 +12,7 @@ class AuthController extends Controller
     public function showLogin(): Response
     {
         if (Auth::check()) {
-            return redirect()->intended('/app/dashboard');
+            return redirect('/app/units');
         }
 
         return Inertia::render('Auth/Login');
@@ -25,9 +25,9 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attemptWhen($credentials, fn ($user) => ! $user->isDeactivated(), $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/app/dashboard');
+            return redirect('/app/units');
         }
 
         return back()->withErrors([

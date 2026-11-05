@@ -20,7 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'active-user' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'unit' => \App\Http\Middleware\EnsureActiveUnit::class,
+            'purchase-request-unit' => \App\Http\Middleware\EnsurePurchaseRequestUnit::class,
         ]);
+
+        // Model rute harus dicari di database unit aktif.
+        $middleware->prependToPriorityList(
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\EnsureActiveUnit::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

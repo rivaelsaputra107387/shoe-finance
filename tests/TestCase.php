@@ -11,9 +11,8 @@ abstract class TestCase extends BaseTestCase
     {
         $app = parent::createApplication();
 
-        // RefreshDatabase mengosongkan database, jadi tes hanya boleh berjalan di database khusus tes.
-        $connection = config('database.default');
-        $database = config("database.connections.{$connection}.database");
+        // Tes menghapus dan mengisi ulang database, jadi hanya boleh berjalan di database khusus tes.
+        $database = config('database.connections.central.database');
 
         if (! is_string($database) || ! str_starts_with($database, 'finlog_test')) {
             throw new RuntimeException("Tes dibatalkan: database '{$database}' bukan database tes.");

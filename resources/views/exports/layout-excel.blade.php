@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            <th colspan="{{ $colspan ?? 5 }}" style="font-weight: bold; font-size: 14px; text-align: center;">SHOE WORKSHOP</th>
+            <th colspan="{{ $colspan ?? 5 }}" style="font-weight: bold; font-size: 14px; text-align: center;">{{ strtoupper(app(\App\Support\UnitContext::class)->current()?->name ?? 'Shoe Workshop') }}</th>
         </tr>
         <tr>
             <th colspan="{{ $colspan ?? 5 }}" style="font-weight: bold; font-size: 12px; text-align: center;">{{ $title ?? 'LAPORAN KEUANGAN' }}</th>

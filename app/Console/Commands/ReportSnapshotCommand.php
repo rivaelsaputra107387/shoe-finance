@@ -2,21 +2,32 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Central\Unit;
 use App\Services\ReportSnapshotService;
+use App\Support\UnitContext;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class ReportSnapshotCommand extends Command
 {
     protected $signature = 'finlog:report-snapshot
+        {--unit= : Kode unit sumber data}
         {--output= : Path file JSON tujuan, di luar repo atau di dalam folder storage}
         {--period=* : Tanggal mulai periode (YYYY-MM-DD). Kosong berarti semua periode yang punya jurnal}
         {--force : Timpa file yang sudah ada}';
 
     protected $description = 'Simpan angka laporan keuangan ke JSON. Hanya membaca database.';
 
-    public function handle(ReportSnapshotService $snapshots): int
+    public function handle(ReportSnapshotService $snapshots, UnitContext $context): int
     {
+        $unit = Unit::where('code', (string) $this->option('unit'))->first();
+
+        if (! $unit) {
+            $this->error('Isi --unit dengan kode unit yang valid.');
+
+            return self::FAILURE;
+        }
+
         $output = $this->option('output');
 
         if (! $output) {
@@ -37,11 +48,11 @@ class ReportSnapshotCommand extends Command
             return self::FAILURE;
         }
 
-        $connection = DB::connection();
+        $connection = DB::connection($context->connectionName($unit));
         $this->info("Sumber data: {$connection->getConfig('host')} / {$connection->getDatabaseName()}");
 
         try {
-            $snapshot = $snapshots->build($this->option('period'));
+            $snapshot = $context->run($unit, fn () => $snapshots->build($this->option('period')));
         } catch (\InvalidArgumentException $e) {
             $this->error($e->getMessage());
 
