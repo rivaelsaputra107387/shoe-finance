@@ -118,6 +118,22 @@ class UnitIsolationTest extends MultiUnitTestCase
         $this->assertNotSame($key($this->unitA), $key($this->unitB));
     }
 
+    public function test_export_file_name_and_heading_use_the_active_unit(): void
+    {
+        $this->journalIn($this->unitB, 'Pendapatan B', 5000);
+        $owner = $this->userWithRole('owner');
+        $periodId = $this->context()->run($this->unitB, fn () => FiscalPeriod::orderBy('start_date')->value('id'));
+
+        $response = $this->actingInUnit($owner, $this->unitB)
+            ->get("/app/income-statement/export?unit=unit_b&format=pdf&fiscal_period_id={$periodId}");
+
+        $response->assertOk();
+        $this->assertStringContainsString('unit_b_', $response->headers->get('content-disposition'));
+
+        $html = view('reports.layout-pdf')->render();
+        $this->assertStringContainsString(strtoupper($this->unitB->name), $html);
+    }
+
     public function test_context_is_restored_after_an_error(): void
     {
         $this->context()->activate($this->unitA);

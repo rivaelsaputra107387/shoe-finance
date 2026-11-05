@@ -46,7 +46,7 @@ export default function Select({ units, activeUnitId }) {
                                 key={unit.id}
                                 type="button"
                                 onClick={() => router.post('/app/units/select', { unit_id: unit.id })}
-                                className={`text-left bg-white dark:bg-gray-900 border rounded-2xl p-5 shadow-sm hover:border-emerald-400 hover:shadow-md transition ${
+                                className={`flex flex-col items-stretch justify-start text-left bg-white dark:bg-gray-900 border rounded-2xl p-5 shadow-sm hover:border-emerald-400 hover:shadow-md transition ${
                                     unit.id === activeUnitId ? 'border-emerald-400' : 'border-gray-200 dark:border-gray-800'
                                 }`}
                             >

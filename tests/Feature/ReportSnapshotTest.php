@@ -165,6 +165,39 @@ class ReportSnapshotTest extends MultiUnitTestCase
         $this->assertSame([], $service->compare($before, $after));
     }
 
+    private function cashFlowSnapshot(array $rows): array
+    {
+        return ['format_version' => 1, 'data' => [], 'reports' => ['2026-10-01' => ['cash_flow' => ['operating' => $rows]]]];
+    }
+
+    public function test_cash_flow_row_order_and_text_are_ignored(): void
+    {
+        $before = $this->cashFlowSnapshot([
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'a, b'],
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+        ]);
+        $after = $this->cashFlowSnapshot([
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'b, a'],
+        ]);
+
+        $this->assertSame([], app(ReportSnapshotService::class)->compare($before, $after));
+    }
+
+    public function test_cash_flow_amount_change_is_still_detected_when_rows_are_reordered(): void
+    {
+        $before = $this->cashFlowSnapshot([
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'a'],
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+        ]);
+        $after = $this->cashFlowSnapshot([
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+            ['account_code' => '4170', 'amount' => 101, 'description' => 'a'],
+        ]);
+
+        $this->assertNotSame([], app(ReportSnapshotService::class)->compare($before, $after));
+    }
+
     public function test_output_inside_the_repo_is_refused_outside_storage(): void
     {
         $this->artisan('finlog:report-snapshot', ['--unit' => 'unit_a', '--output' => base_path('snapshot-test.json')])->assertFailed();

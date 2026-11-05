@@ -13,6 +13,12 @@ function isUnitConflict(response) {
     return response?.status === 409 && response?.data?.code === 'unit_conflict';
 }
 
+function announceConflict(response) {
+    window.dispatchEvent(new CustomEvent(UNIT_CONFLICT_EVENT, {
+        detail: { activeUnit: response.data.active_unit },
+    }));
+}
+
 function rememberUnit(page) {
     unitCode = page?.props?.unit?.active?.code ?? null;
     unitName = page?.props?.unit?.active?.name ?? null;
@@ -36,22 +42,23 @@ export function setupUnitContext(initialPage) {
         return config;
     });
 
+    // Pemanggilan axios langsung, seperti widget AI.
     axios.interceptors.response.use(
         (response) => response,
         (error) => {
             if (isUnitConflict(error.response)) {
-                window.dispatchEvent(new CustomEvent(UNIT_CONFLICT_EVENT, {
-                    detail: { activeUnit: error.response.data.active_unit },
-                }));
+                announceConflict(error.response);
             }
 
             return Promise.reject(error);
         },
     );
 
+    // Inertia menerima semua status sebagai respons biasa, jadi konflik datang lewat event ini.
     router.on('invalid', (event) => {
         if (isUnitConflict(event.detail.response)) {
             event.preventDefault();
+            announceConflict(event.detail.response);
         }
     });
 }
