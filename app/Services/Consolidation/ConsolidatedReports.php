@@ -7,6 +7,7 @@ use App\Models\Central\CalendarPeriod;
 use App\Models\Central\Unit;
 use App\Models\FiscalPeriod;
 use App\Services\BalanceSheetService;
+use App\Services\CashFlowReportService;
 use App\Services\EquityStatementService;
 use App\Services\IncomeStatementService;
 use App\Support\UnitContext;
@@ -126,6 +127,71 @@ class ConsolidatedReports
             'ending_capital' => $ending['combined'],
             'total_equity' => $balanceSheet['total_equity']['combined'],
             'matches_balance_sheet' => abs($ending['combined'] - $balanceSheet['total_equity']['combined']) < self::TOLERANCE,
+        ]);
+    }
+
+    public function cashFlow(CalendarPeriod $period): array
+    {
+        $scope = ConsolidationScope::for($period);
+        $codes = $scope->unitCodes();
+
+        $data = $scope->mapUnits(function (Unit $unit, FiscalPeriod $fiscalPeriod) {
+            $report = (new CashFlowReportService)->generate($fiscalPeriod->id);
+            $rows = fn (array $items) => array_map(fn (array $item) => [
+                'code' => $item['account_code'],
+                'name' => $item['account_name'],
+                'balance' => $item['amount'],
+            ], $items);
+
+            return [
+                'report' => [
+                    'operating' => $rows($report['operating']),
+                    'investing' => $rows($report['investing']),
+                    'financing' => $rows($report['financing']),
+                ],
+                'accounts' => $this->accountMap(),
+                'totals' => $report,
+                'balance_sheet_cash' => collect((new BalanceSheetService)->generate($fiscalPeriod->id)['current_assets'])
+                    ->filter(fn (array $row) => preg_match('/^11[12]/', $row['code']))
+                    ->sum('balance'),
+            ];
+        });
+
+        $operating = $this->groupByHeader($data, 'operating', $codes);
+        $investing = $this->groupByHeader($data, 'investing', $codes);
+        $financing = $this->groupByHeader($data, 'financing', $codes);
+
+        $totalOperating = $this->total('Arus Kas Operasi', $operating, $codes);
+        $totalInvesting = $this->total('Arus Kas Investasi', $investing, $codes);
+        $totalFinancing = $this->total('Arus Kas Pendanaan', $financing, $codes);
+
+        // Uang yang berpindah antar unit bukan arus kas grup. Bila kedua sisi tidak sama, selisihnya dikembalikan
+        // di sini, karena kas akhir tidak dieliminasi: uangnya tetap ada di rekening salah satu unit.
+        $eliminated = $totalOperating['elimination'] + $totalInvesting['elimination'] + $totalFinancing['elimination'];
+        $difference = abs($eliminated) >= self::TOLERANCE
+            ? [$this->line('Selisih Antar Unit (belum cocok)', array_fill_keys($codes, 0.0), -$eliminated)]
+            : [];
+
+        $column = fn (string $key) => collect($data)->map(fn (array $item) => (float) $item['totals'][$key])->all();
+
+        $netIncrease = $this->line('Kenaikan (Penurunan) Bersih Kas', $column('net_increase'), 0.0, 'subtotal');
+        $beginning = $this->line('Kas Awal Periode', $column('beginning_cash'));
+        $ending = $this->line('Kas Akhir Periode', $column('ending_cash'), 0.0, 'total');
+        $balanceSheetCash = round(collect($data)->sum('balance_sheet_cash'), 2);
+
+        return $this->report('Arus Kas Gabungan', $scope, [
+            $this->heading('Aktivitas Operasi'), ...$operating, $totalOperating,
+            $this->heading('Aktivitas Investasi'), ...$investing, $totalInvesting,
+            $this->heading('Aktivitas Pendanaan'), ...$financing, $totalFinancing,
+            ...$difference,
+            $netIncrease,
+            $beginning,
+            $ending,
+        ], [
+            'ending_cash' => $ending['combined'],
+            'balance_sheet_cash' => $balanceSheetCash,
+            'matches_balance_sheet' => abs($ending['combined'] - $balanceSheetCash) < self::TOLERANCE,
+            'units_valid' => collect($data)->every(fn (array $item) => (bool) $item['totals']['is_valid']),
         ]);
     }
 

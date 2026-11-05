@@ -17,6 +17,7 @@ class ConsolidatedReportController extends Controller
         'income-statement' => ['method' => 'incomeStatement', 'file' => 'Laba_Rugi_Gabungan'],
         'balance-sheet' => ['method' => 'balanceSheet', 'file' => 'Neraca_Gabungan'],
         'equity-statement' => ['method' => 'equityStatement', 'file' => 'Perubahan_Ekuitas_Gabungan'],
+        'cash-flow' => ['method' => 'cashFlow', 'file' => 'Arus_Kas_Gabungan'],
     ];
 
     public function __construct(private ConsolidatedReports $reports) {}

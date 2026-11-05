@@ -34,8 +34,8 @@ Route::middleware(['auth', 'active-user'])->prefix('app')->group(function () {
 // Laporan Gabungan membaca semua unit, jadi tidak memakai unit aktif
 Route::middleware(['auth', 'active-user', 'consolidated'])->prefix('app/consolidated')->group(function () {
     Route::get('/reconciliation', [ConsolidatedReportController::class, 'reconciliation'])->name('consolidated.reconciliation');
-    Route::get('/{report}', [ConsolidatedReportController::class, 'show'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement'])->name('consolidated.show');
-    Route::get('/{report}/export', [ConsolidatedReportController::class, 'export'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement'])->name('consolidated.export');
+    Route::get('/{report}', [ConsolidatedReportController::class, 'show'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement', 'cash-flow'])->name('consolidated.show');
+    Route::get('/{report}/export', [ConsolidatedReportController::class, 'export'])->whereIn('report', ['income-statement', 'balance-sheet', 'equity-statement', 'cash-flow'])->name('consolidated.export');
 });
 
 // Authenticated Application Routes

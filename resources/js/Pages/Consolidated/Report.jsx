@@ -75,6 +75,10 @@ function CheckBadges({ checks }) {
         items.push({ ok: checks.matches_balance_sheet, text: checks.matches_balance_sheet ? 'Cocok dengan Neraca Gabungan' : 'Tidak cocok dengan Neraca Gabungan' });
     }
 
+    if ('units_valid' in checks) {
+        items.push({ ok: checks.units_valid, text: checks.units_valid ? 'Kas akhir tiap unit cocok dengan buku besar' : 'Kas akhir ada unit yang tidak cocok dengan buku besar' });
+    }
+
     return items.map((item) => (
         <span key={item.text} className={`inline-flex items-center gap-1.5 text-xs font-semibold ${item.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600'}`}>
             {item.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}

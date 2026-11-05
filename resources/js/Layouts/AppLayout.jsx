@@ -94,6 +94,7 @@ export default function AppLayout({ children, title }) {
                 { name: 'Laba Rugi Gabungan', href: '/app/consolidated/income-statement', icon: TrendingUp, show: Boolean(unit?.canViewConsolidated) },
                 { name: 'Neraca Gabungan', href: '/app/consolidated/balance-sheet', icon: Scale, show: Boolean(unit?.canViewConsolidated) },
                 { name: 'Perubahan Ekuitas Gabungan', href: '/app/consolidated/equity-statement', icon: PieChart, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Arus Kas Gabungan', href: '/app/consolidated/cash-flow', icon: Receipt, show: Boolean(unit?.canViewConsolidated) },
                 { name: 'Cek Kecocokan Antar Unit', href: '/app/consolidated/reconciliation', icon: ShieldCheck, show: Boolean(unit?.canViewConsolidated) },
             ].filter(i => i.show),
         },

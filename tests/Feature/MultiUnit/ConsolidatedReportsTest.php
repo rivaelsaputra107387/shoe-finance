@@ -528,6 +528,105 @@ class ConsolidatedReportsTest extends MultiUnitTestCase
         $this->assertTrue($equity['checks']['matches_balance_sheet'], json_encode($equity['checks']));
     }
 
+    public function test_cash_flow_eliminates_cash_moving_between_units(): void
+    {
+        $this->seedMatchedTransactions();
+
+        $report = $this->reports()->cashFlow($this->period);
+        $operating = $this->row($report, 'Arus Kas Operasi');
+
+        // A: +10jt dari luar, -5jt ke B. B: +5jt dari A, -1jt gaji.
+        $this->assertEquals(5000000, $operating['amounts']['unit_a']);
+        $this->assertEquals(4000000, $operating['amounts']['unit_b']);
+        $this->assertEquals(0, $operating['elimination']);
+        $this->assertEquals(9000000, $operating['combined']);
+
+        $this->assertEquals(-5000000, $this->rowByCode($report, '4200')['elimination']);
+        $this->assertEquals(0, $this->rowByCode($report, '4200')['combined']);
+        $this->assertEquals(5000000, $this->rowByCode($report, '6800')['elimination']);
+        $this->assertEquals(0, $this->rowByCode($report, '6800')['combined']);
+    }
+
+    public function test_ending_cash_is_not_eliminated_and_matches_balance_sheet(): void
+    {
+        $this->seedMatchedTransactions();
+
+        $report = $this->reports()->cashFlow($this->period);
+
+        // Modal 150jt ditambah kas bersih 9jt.
+        $this->assertEquals(159000000, $this->row($report, 'Kas Akhir Periode')['combined']);
+        $this->assertEquals(0, $this->row($report, 'Kas Akhir Periode')['elimination']);
+        $this->assertTrue($report['checks']['matches_balance_sheet'], json_encode($report['checks']));
+        $this->assertTrue($report['checks']['units_valid']);
+    }
+
+    public function test_cash_flow_stays_correct_when_units_do_not_match(): void
+    {
+        $this->journal($this->unitA, ['6820' => [5000000, 0], '1110' => [0, 5000000]]);
+        $this->journal($this->unitB, ['1110' => [4000000, 0], '4210' => [0, 4000000]]);
+
+        $report = $this->reports()->cashFlow($this->period);
+
+        $this->assertEquals(-1000000, $this->row($report, 'Kenaikan (Penurunan) Bersih Kas')['combined']);
+        $this->assertEquals(-1000000, $this->row($report, 'Selisih Antar Unit (belum cocok)')['elimination']);
+        $this->assertEquals(-1000000, $this->row($report, 'Kas Akhir Periode')['combined']);
+        $this->assertTrue($report['checks']['matches_balance_sheet']);
+        $this->assertSame('SEMENTARA', $report['status']['label']);
+    }
+
+    public function test_credit_sale_between_units_has_no_cash_effect(): void
+    {
+        $this->journal($this->unitA, ['1133' => [3000, 0], '4110' => [0, 3000]]);
+        $this->journal($this->unitB, ['6110' => [3000, 0], '2170' => [0, 3000]]);
+
+        $report = $this->reports()->cashFlow($this->period);
+
+        $this->assertEquals(0, $this->row($report, 'Kas Akhir Periode')['combined']);
+    }
+
+    public function test_settling_intercompany_debt_is_eliminated_from_cash_flow(): void
+    {
+        // B melunasi utang ke A.
+        $this->journal($this->unitB, ['2170' => [3000, 0], '1110' => [0, 3000]]);
+        $this->journal($this->unitA, ['1110' => [3000, 0], '1133' => [0, 3000]]);
+
+        $report = $this->reports()->cashFlow($this->period);
+
+        $this->assertEquals(0, $this->row($report, 'Kenaikan (Penurunan) Bersih Kas')['combined']);
+        $this->assertArrayNotHasKey('Selisih Antar Unit (belum cocok)', array_flip(collect($report['rows'])->pluck('label')->all()));
+    }
+
+    public function test_cash_flow_carries_opening_cash_into_the_next_period(): void
+    {
+        $this->actingAs($this->author);
+        $this->seedMatchedTransactions();
+
+        foreach ([$this->unitA, $this->unitB, $this->unitC] as $unit) {
+            $this->closeWithService($unit);
+        }
+
+        $report = $this->reports()->cashFlow(CalendarPeriod::where('start_date', '2026-08-01')->firstOrFail());
+
+        $this->assertEquals(159000000, $this->row($report, 'Kas Awal Periode')['combined']);
+        $this->assertEquals(159000000, $this->row($report, 'Kas Akhir Periode')['combined']);
+        $this->assertTrue($report['checks']['matches_balance_sheet'], json_encode($report['checks']));
+    }
+
+    public function test_cash_flow_page_and_exports_work(): void
+    {
+        $this->seedMatchedTransactions();
+        $owner = $this->userWithRole('owner');
+
+        $this->actingAs($owner)->get('/app/consolidated/cash-flow')->assertOk();
+        $pdf = $this->actingAs($owner)->get('/app/consolidated/cash-flow/export?format=pdf&period='.self::START);
+        $pdf->assertOk();
+        $this->assertStringContainsString('Arus_Kas_Gabungan_Juli_2026.pdf', $pdf->headers->get('content-disposition'));
+        $this->actingAs($owner)->get('/app/consolidated/cash-flow/export?format=excel&period='.self::START)->assertOk();
+
+        $finance = $this->userWithRole('finance', [$this->unitA]);
+        $this->actingAs($finance)->get('/app/consolidated/cash-flow')->assertForbidden();
+    }
+
     public function test_page_without_any_calendar_period_still_opens(): void
     {
         CalendarPeriod::query()->delete();
