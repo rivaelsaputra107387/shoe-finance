@@ -6,6 +6,12 @@ import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
 import { Plus, Search, X, Pencil, Trash2, Lock } from 'lucide-react';
 
+function FieldError({ message }) {
+    if (!message) return null;
+
+    return <p className="mt-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">{message}</p>;
+}
+
 export default function Accounts({ accounts, parents, filters }) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
@@ -22,7 +28,7 @@ export default function Accounts({ accounts, parents, filters }) {
         onConfirm: () => {},
     });
 
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         code: '',
         name: '',
         type: 'Aset',
@@ -80,7 +86,14 @@ export default function Accounts({ accounts, parents, filters }) {
         });
     };
 
+    const closeModal = () => {
+        setCreateModalOpen(false);
+        setEditingAccount(null);
+        clearErrors();
+    };
+
     const handleOpenEdit = (acc) => {
+        clearErrors();
         setEditingAccount(acc);
         setData({
             code: acc.code,
@@ -156,7 +169,7 @@ export default function Accounts({ accounts, parents, filters }) {
                     </div>
 
                     <button
-                        onClick={() => { reset(); setCreateModalOpen(true); }}
+                        onClick={() => { reset(); clearErrors(); setCreateModalOpen(true); }}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
                     >
                         <Plus className="w-4 h-4" />
@@ -316,17 +329,19 @@ export default function Accounts({ accounts, parents, filters }) {
                             <h3 className="text-base font-bold text-gray-900 dark:text-white">
                                 {editingAccount ? 'Edit Akun COA' : 'Tambah Akun COA Baru'}
                             </h3>
-                            <button onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
                         </div>
 
                         <form onSubmit={editingAccount ? handleEditSubmit : handleCreateSubmit} className="space-y-4 text-xs">
                             <div>
                                 <label className="block font-semibold mb-1">Kode Akun</label>
-                                <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} required placeholder="Misal: 1110" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
+                                <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} required placeholder="Misal: 1110" className={`w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl ${errors.code ? 'border-rose-400' : ''}`} />
+                                <FieldError message={errors.code} />
                             </div>
                             <div>
                                 <label className="block font-semibold mb-1">Nama Akun</label>
-                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Kas Toko" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
+                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Kas Toko" className={`w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl ${errors.name ? 'border-rose-400' : ''}`} />
+                                <FieldError message={errors.name} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -345,6 +360,7 @@ export default function Accounts({ accounts, parents, filters }) {
                                         <option value="Debet">Debet</option>
                                         <option value="Kredit">Kredit</option>
                                     </CustomSelect>
+                                    <FieldError message={errors.normal_balance} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -371,10 +387,11 @@ export default function Accounts({ accounts, parents, filters }) {
                                             </option>
                                         ))}
                                     </CustomSelect>
+                                    <FieldError message={errors.parent_id} />
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 pt-3">
-                                <button type="button" onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
+                                <button type="button" onClick={closeModal} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
                                 <button type="submit" disabled={processing} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl">
                                     {editingAccount ? 'Perbarui' : 'Simpan'}
                                 </button>

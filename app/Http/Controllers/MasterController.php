@@ -45,11 +45,11 @@ class MasterController extends Controller
         $parent = $this->validatedParent($request);
 
         $request->validate([
-            'code'               => ['required', 'string', 'max:10', 'unique:accounts,code', new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
+            'code'               => ['required', 'string', 'max:10', $this->uniqueCodeRule(), new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
             'name'               => ['required', 'string', 'max:255'],
             'normal_balance'     => ['nullable', 'string', 'in:Debet,Kredit'],
             'cash_flow_category' => ['nullable', 'string'],
-        ]);
+        ], $this->accountMessages());
 
         Account::create($this->accountAttributes($request, $parent) + ['code' => $request->code]);
 
@@ -65,11 +65,11 @@ class MasterController extends Controller
         $parent = $this->validatedParent($request);
 
         $request->validate([
-            'code'               => ['required', 'string', 'max:10', 'unique:accounts,code,' . $account->id, new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
+            'code'               => ['required', 'string', 'max:10', $this->uniqueCodeRule($account), new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
             'name'               => ['required', 'string', 'max:255'],
             'normal_balance'     => ['nullable', 'string', 'in:Debet,Kredit'],
             'cash_flow_category' => ['nullable', 'string'],
-        ]);
+        ], $this->accountMessages());
 
         $account->update($this->accountAttributes($request, $parent) + ['code' => $request->code]);
 
@@ -128,9 +128,42 @@ class MasterController extends Controller
             'parent_id' => ['required', 'integer', 'exists:accounts,id'],
         ], [
             'parent_id.required' => 'Pilih akun induk.',
+            'parent_id.exists'   => 'Akun induk tidak ditemukan.',
         ]);
 
         return Account::findOrFail($request->integer('parent_id'));
+    }
+
+    private function accountMessages(): array
+    {
+        return [
+            'code.required'     => 'Kode akun wajib diisi.',
+            'code.max'          => 'Kode akun maksimal 10 karakter.',
+            'name.required'     => 'Nama akun wajib diisi.',
+            'name.max'          => 'Nama akun maksimal 255 karakter.',
+            'normal_balance.in' => 'Saldo normal harus Debet atau Kredit.',
+        ];
+    }
+
+    /**
+     * Kode akun unik, termasuk akun yang sudah dihapus: barisnya masih ada dan kolom code berindeks unik.
+     */
+    private function uniqueCodeRule(?Account $ignore = null): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($ignore) {
+            $existing = Account::withTrashed()
+                ->where('code', $value)
+                ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
+                ->first();
+
+            if (! $existing) {
+                return;
+            }
+
+            $fail($existing->trashed()
+                ? "Kode {$value} pernah dipakai akun '{$existing->name}' yang sudah dihapus. Gunakan kode lain."
+                : "Kode {$value} sudah dipakai akun '{$existing->name}'.");
+        };
     }
 
     /**

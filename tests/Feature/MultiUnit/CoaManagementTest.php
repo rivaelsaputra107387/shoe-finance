@@ -117,6 +117,34 @@ class CoaManagementTest extends MultiUnitTestCase
         ])->assertSessionHasErrors('code');
     }
 
+    public function test_code_of_a_deleted_account_cannot_be_reused(): void
+    {
+        $this->act()->post('/app/accounts', $this->subAccountPayload(['name' => 'Packaging']));
+        Account::where('code', '6991')->firstOrFail()->delete();
+
+        $this->act()->post('/app/accounts', $this->subAccountPayload())
+            ->assertSessionHasErrors(['code' => "Kode 6991 pernah dipakai akun 'Packaging' yang sudah dihapus. Gunakan kode lain."]);
+    }
+
+    public function test_duplicate_code_names_the_existing_account(): void
+    {
+        $this->act()->post('/app/accounts', $this->subAccountPayload(['name' => 'Packaging']));
+
+        $this->act()->post('/app/accounts', $this->subAccountPayload())
+            ->assertSessionHasErrors(['code' => "Kode 6991 sudah dipakai akun 'Packaging'."]);
+    }
+
+    public function test_editing_an_account_keeps_its_own_code(): void
+    {
+        $this->act()->post('/app/accounts', $this->subAccountPayload());
+        $account = Account::where('code', '6991')->firstOrFail();
+
+        $this->act()->put("/app/accounts/{$account->id}", $this->subAccountPayload(['name' => 'Beban Uji Baru']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Beban Uji Baru', $account->fresh()->name);
+    }
+
     public function test_cash_and_bank_accounts_need_cash_codes(): void
     {
         $parent = Account::where('code', '1100')->value('id');
