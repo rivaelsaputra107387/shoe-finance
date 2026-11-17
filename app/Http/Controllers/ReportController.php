@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\UnitContext;
 use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Services\BalanceSheetService;
@@ -144,10 +143,7 @@ class ReportController extends Controller
         $cleanPeriod = str_replace([' ', '/', '\\', ':'], '_', trim($periodName));
         $cleanExtra  = $extra ? '_' . str_replace([' ', '/', '\\', ':'], '_', trim($extra)) : '';
 
-        $unitCode = app(UnitContext::class)->current()?->code;
-        $prefix = $unitCode ? "{$unitCode}_" : '';
-
-        return "{$prefix}{$cleanTitle}{$cleanExtra}_{$cleanPeriod}.{$ext}";
+        return "{$cleanTitle}{$cleanExtra}_{$cleanPeriod}.{$ext}";
     }
 
     public function exportGeneralLedger(Request $request)

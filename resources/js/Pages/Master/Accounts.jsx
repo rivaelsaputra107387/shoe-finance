@@ -4,13 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import Pagination from '@/Components/Pagination';
 import CustomSelect from '@/Components/CustomSelect';
-import { Plus, Search, X, Pencil, Trash2, Lock } from 'lucide-react';
-
-function FieldError({ message }) {
-    if (!message) return null;
-
-    return <p className="mt-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">{message}</p>;
-}
+import { Plus, Search, X, Pencil, Trash2 } from 'lucide-react';
 
 export default function Accounts({ accounts, parents, filters }) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -28,7 +22,7 @@ export default function Accounts({ accounts, parents, filters }) {
         onConfirm: () => {},
     });
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, put, processing, errors, reset } = useForm({
         code: '',
         name: '',
         type: 'Aset',
@@ -37,25 +31,6 @@ export default function Accounts({ accounts, parents, filters }) {
         cash_flow_category: '',
         parent_id: '',
     });
-
-    // Tipe, kategori, dan saldo normal mengikuti induk. Saldo normal bisa diubah untuk akun kontra.
-    const handleParentChange = (parentId) => {
-        const parent = parents?.find((item) => String(item.id) === String(parentId));
-
-        setData({
-            ...data,
-            parent_id: parentId,
-            ...(parent ? { type: parent.type, report_category: parent.report_category, normal_balance: parent.normal_balance } : {}),
-        });
-    };
-
-    const deleteBlocker = (acc) => {
-        if (acc.is_locked) return 'Akun terkunci, sama di semua unit';
-        if (acc.children_count > 0) return 'Masih memiliki sub-akun';
-        if (acc.journal_entry_lines_count > 0) return 'Sudah memiliki transaksi jurnal';
-
-        return null;
-    };
 
     const handleFilter = () => {
         router.get('/app/accounts', { search, type }, { preserveState: true, replace: true });
@@ -86,14 +61,7 @@ export default function Accounts({ accounts, parents, filters }) {
         });
     };
 
-    const closeModal = () => {
-        setCreateModalOpen(false);
-        setEditingAccount(null);
-        clearErrors();
-    };
-
     const handleOpenEdit = (acc) => {
-        clearErrors();
         setEditingAccount(acc);
         setData({
             code: acc.code,
@@ -155,7 +123,7 @@ export default function Accounts({ accounts, parents, filters }) {
 
     return (
         <AppLayout title="Chart of Accounts (COA)">
-            <Head title="Chart of Accounts" />
+            <Head title="Chart of Accounts - SIA Shoe Workshop" />
 
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -169,7 +137,7 @@ export default function Accounts({ accounts, parents, filters }) {
                     </div>
 
                     <button
-                        onClick={() => { reset(); clearErrors(); setCreateModalOpen(true); }}
+                        onClick={() => { reset(); setCreateModalOpen(true); }}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
                     >
                         <Plus className="w-4 h-4" />
@@ -288,24 +256,17 @@ export default function Accounts({ accounts, parents, filters }) {
                                             <td className="py-3.5 px-4 text-xs text-gray-500">{acc.report_category}</td>
                                             <td className="py-3.5 px-4 text-xs font-mono text-gray-400">{acc.parent ? `${acc.parent.code} - ${acc.parent.name}` : '-'}</td>
                                             <td className="py-3.5 px-4 text-right space-x-1">
-                                                {acc.is_locked && (
-                                                    <span title="Akun terkunci, sama di semua unit" className="inline-flex p-1.5 text-gray-400 align-middle">
-                                                        <Lock className="w-4 h-4" />
-                                                    </span>
-                                                )}
                                                 <button
                                                     onClick={() => handleOpenEdit(acc)}
-                                                    disabled={acc.is_locked}
-                                                    className="p-1.5 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                                                    className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
                                                     title="Edit Akun"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(acc)}
-                                                    disabled={Boolean(deleteBlocker(acc))}
-                                                    className="p-1.5 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
-                                                    title={deleteBlocker(acc) || 'Hapus Akun'}
+                                                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                                                    title="Hapus Akun"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -329,24 +290,22 @@ export default function Accounts({ accounts, parents, filters }) {
                             <h3 className="text-base font-bold text-gray-900 dark:text-white">
                                 {editingAccount ? 'Edit Akun COA' : 'Tambah Akun COA Baru'}
                             </h3>
-                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                            <button onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
                         </div>
 
                         <form onSubmit={editingAccount ? handleEditSubmit : handleCreateSubmit} className="space-y-4 text-xs">
                             <div>
                                 <label className="block font-semibold mb-1">Kode Akun</label>
-                                <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} required placeholder="Misal: 1110" className={`w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl ${errors.code ? 'border-rose-400' : ''}`} />
-                                <FieldError message={errors.code} />
+                                <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} required placeholder="Misal: 1110" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
                             <div>
                                 <label className="block font-semibold mb-1">Nama Akun</label>
-                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Kas Toko" className={`w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl ${errors.name ? 'border-rose-400' : ''}`} />
-                                <FieldError message={errors.name} />
+                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Kas Toko" className="w-full p-2.5 bg-gray-50 dark:bg-gray-800 border rounded-xl" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block font-semibold mb-1">Tipe</label>
-                                    <CustomSelect disabled value={data.type} onChange={(e) => setData('type', e.target.value)} className="w-full">
+                                    <CustomSelect value={data.type} onChange={(e) => setData('type', e.target.value)} className="w-full">
                                         <option value="Aset">Aset</option>
                                         <option value="Kewajiban">Kewajiban</option>
                                         <option value="Ekuitas">Ekuitas</option>
@@ -360,38 +319,37 @@ export default function Accounts({ accounts, parents, filters }) {
                                         <option value="Debet">Debet</option>
                                         <option value="Kredit">Kredit</option>
                                     </CustomSelect>
-                                    <FieldError message={errors.normal_balance} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block font-semibold mb-1">Kategori Laporan</label>
-                                    <CustomSelect disabled value={data.report_category} onChange={(e) => setData('report_category', e.target.value)} className="w-full">
+                                    <CustomSelect value={data.report_category} onChange={(e) => setData('report_category', e.target.value)} className="w-full">
                                         <option value="Neraca">Neraca</option>
                                         <option value="Laba Rugi">Laba Rugi</option>
                                     </CustomSelect>
                                 </div>
                                 <div>
                                     <label className="block font-semibold mb-1">
-                                        Akun Induk
+                                        Parent Akun
+                                        <span className="ml-1 font-normal text-gray-400">(Opsional)</span>
                                     </label>
                                     <CustomSelect
                                         value={data.parent_id}
-                                        onChange={(e) => handleParentChange(e.target.value)}
+                                        onChange={(e) => setData('parent_id', e.target.value)}
                                         className="w-full"
                                     >
-                                        <option value="">Pilih akun induk...</option>
+                                        <option value="">— Tidak ada (Akun Induk) —</option>
                                         {parents?.map((p) => (
                                             <option key={p.id} value={p.id}>
                                                 {p.code} – {p.name}
                                             </option>
                                         ))}
                                     </CustomSelect>
-                                    <FieldError message={errors.parent_id} />
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3 pt-3">
-                                <button type="button" onClick={closeModal} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
+                                <button type="button" onClick={() => { setCreateModalOpen(false); setEditingAccount(null); }} className="px-4 py-2 font-semibold text-gray-500">Batal</button>
                                 <button type="submit" disabled={processing} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl">
                                     {editingAccount ? 'Perbarui' : 'Simpan'}
                                 </button>

@@ -39,7 +39,7 @@ class PurchaseRequestStatusController extends Controller
         $purchaseRequest->update($updateData);
 
         // Trigger Webhook to Workshop
-        SendWebhookToWorkshopJob::dispatch($purchaseRequest->id, app(\App\Support\UnitContext::class)->current()->code);
+        SendWebhookToWorkshopJob::dispatch($purchaseRequest);
 
         // Since we don't have the full UI yet, we can return JSON or redirect
         if ($request->wantsJson()) {

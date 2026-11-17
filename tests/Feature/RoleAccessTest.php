@@ -6,22 +6,29 @@ use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
 use App\Models\User;
+use Database\Seeders\AccountSeeder;
+use Database\Seeders\FiscalPeriodSeeder;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
-use Tests\MultiUnitTestCase;
+use Tests\TestCase;
 
-class RoleAccessTest extends MultiUnitTestCase
+class RoleAccessTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->context()->activate($this->unitA);
+        $this->withoutVite();
+        $this->seed([RolePermissionSeeder::class, FiscalPeriodSeeder::class, AccountSeeder::class]);
     }
 
-    private function actAs(string $role): static
+    private function userWithRole(string $role): User
     {
-        return $this->actingInUnit($this->userWithRole($role, [$this->unitA]), $this->unitA);
+        return User::factory()->create()->assignRole($role);
     }
 
     private function resolveUri(string $uri): string
@@ -63,13 +70,14 @@ class RoleAccessTest extends MultiUnitTestCase
             ['get', '/app/opening-balances'],
             ['get', '/app/users'],
             ['get', '/app/audit-trail'],
+            ['get', '/admin'],
         ];
     }
 
     #[DataProvider('ownerFinanceOnlyRoutes')]
     public function test_staff_is_forbidden(string $method, string $uri): void
     {
-        $response = $this->actAs('staff')->{$method}($this->resolveUri($uri));
+        $response = $this->actingAs($this->userWithRole('staff'))->{$method}($this->resolveUri($uri));
 
         $response->assertForbidden();
     }
@@ -78,15 +86,10 @@ class RoleAccessTest extends MultiUnitTestCase
     public function test_owner_and_finance_are_not_forbidden(string $method, string $uri): void
     {
         foreach (['owner', 'finance'] as $role) {
-            $response = $this->actAs($role)->{$method}($this->resolveUri($uri));
+            $response = $this->actingAs($this->userWithRole($role))->{$method}($this->resolveUri($uri));
 
             $this->assertNotSame(403, $response->getStatusCode(), "{$role} ditolak di {$uri}");
         }
-    }
-
-    public function test_old_admin_panel_is_gone(): void
-    {
-        $this->actAs('owner')->get('/admin')->assertNotFound();
     }
 
     public function test_guest_is_redirected_to_login(): void
@@ -111,7 +114,7 @@ class RoleAccessTest extends MultiUnitTestCase
     #[DataProvider('staffPages')]
     public function test_staff_can_still_open_their_pages(string $uri): void
     {
-        $this->actAs('staff')->get($uri)->assertOk();
+        $this->actingAs($this->userWithRole('staff'))->get($uri)->assertOk();
     }
 
     private function draftJournal(User $creator): JournalEntry
@@ -127,10 +130,10 @@ class RoleAccessTest extends MultiUnitTestCase
 
     public function test_staff_cannot_bulk_approve_journals(): void
     {
-        $staff = $this->userWithRole('staff', [$this->unitA]);
+        $staff = $this->userWithRole('staff');
         $entry = $this->draftJournal($staff);
 
-        $this->actingInUnit($staff, $this->unitA)
+        $this->actingAs($staff)
             ->post('/app/journal-entries/bulk-approve', ['ids' => [$entry->id]])
             ->assertForbidden();
 
@@ -139,22 +142,22 @@ class RoleAccessTest extends MultiUnitTestCase
 
     public function test_finance_can_bulk_approve_journals(): void
     {
-        $finance = $this->userWithRole('finance', [$this->unitA]);
+        $finance = $this->userWithRole('finance');
         $entry = $this->draftJournal($finance);
 
-        $this->actingInUnit($finance, $this->unitA)->post('/app/journal-entries/bulk-approve', ['ids' => [$entry->id]]);
+        $this->actingAs($finance)->post('/app/journal-entries/bulk-approve', ['ids' => [$entry->id]]);
 
         $this->assertSame('posted', $entry->fresh()->status);
     }
 
     public function test_staff_can_still_submit_and_delete_drafts(): void
     {
-        $staff = $this->userWithRole('staff', [$this->unitA]);
+        $staff = $this->userWithRole('staff');
         $submitted = $this->draftJournal($staff);
         $deleted = $this->draftJournal($staff);
 
-        $this->actingInUnit($staff, $this->unitA)->post('/app/journal-entries/bulk-submit', ['ids' => [$submitted->id]]);
-        $this->actingInUnit($staff, $this->unitA)->post('/app/journal-entries/bulk-delete', ['ids' => [$deleted->id]]);
+        $this->actingAs($staff)->post('/app/journal-entries/bulk-submit', ['ids' => [$submitted->id]]);
+        $this->actingAs($staff)->post('/app/journal-entries/bulk-delete', ['ids' => [$deleted->id]]);
 
         $this->assertSame('unapproved', $submitted->fresh()->status);
         $this->assertSoftDeleted($deleted);
@@ -162,18 +165,18 @@ class RoleAccessTest extends MultiUnitTestCase
 
     public function test_staff_can_still_view_accounts_but_not_change_them(): void
     {
-        $staff = $this->userWithRole('staff', [$this->unitA]);
+        $staff = $this->userWithRole('staff');
         $account = Account::whereNotNull('parent_id')->first();
 
-        $this->actingInUnit($staff, $this->unitA)->get('/app/accounts')->assertOk();
-        $this->actingInUnit($staff, $this->unitA)->delete("/app/accounts/{$account->id}")->assertForbidden();
+        $this->actingAs($staff)->get('/app/accounts')->assertOk();
+        $this->actingAs($staff)->delete("/app/accounts/{$account->id}")->assertForbidden();
 
         $this->assertNotSoftDeleted($account);
     }
 
     private function aiPromptFor(string $role): string
     {
-        $this->actingAs($this->userWithRole($role, [$this->unitA]));
+        $this->actingAs($this->userWithRole($role));
         $method = new ReflectionMethod(\App\Http\Controllers\AiAssistantController::class, 'getSystemPrompt');
 
         return $method->invoke(new \App\Http\Controllers\AiAssistantController());

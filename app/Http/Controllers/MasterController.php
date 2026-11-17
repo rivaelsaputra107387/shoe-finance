@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Rules\AccountCodeMatchesParent;
-use App\Services\FiscalCalendar;
 use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
@@ -16,7 +14,7 @@ class MasterController extends Controller
 {
     public function accounts(Request $request): Response
     {
-        $query = Account::with('parent')->withCount(['children', 'journalEntryLines'])->orderBy('code');
+        $query = Account::with('parent')->orderBy('code');
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
@@ -42,46 +40,42 @@ class MasterController extends Controller
 
     public function storeAccount(Request $request)
     {
-        $parent = $this->validatedParent($request);
-
         $request->validate([
-            'code'               => ['required', 'string', 'max:10', $this->uniqueCodeRule(), new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
+            'code'               => ['required', 'string', 'unique:accounts,code'],
             'name'               => ['required', 'string', 'max:255'],
-            'normal_balance'     => ['nullable', 'string', 'in:Debet,Kredit'],
+            'type'               => ['required', 'string'],
+            'normal_balance'     => ['required', 'string', 'in:Debet,Kredit'],
+            'report_category'    => ['required', 'string', 'in:Neraca,Laba Rugi'],
             'cash_flow_category' => ['nullable', 'string'],
-        ], $this->accountMessages());
+            'parent_id'          => ['nullable', 'exists:accounts,id'],
+        ]);
 
-        Account::create($this->accountAttributes($request, $parent) + ['code' => $request->code]);
+        Account::create($request->all());
 
         return back()->with('success', 'Akun COA berhasil dibuat.');
     }
 
     public function updateAccount(Request $request, Account $account)
     {
-        if ($account->is_locked) {
-            return back()->with('error', 'Akun ini terkunci dan sama di semua unit. Perubahan diajukan ke Tim IT.');
-        }
-
-        $parent = $this->validatedParent($request);
-
         $request->validate([
-            'code'               => ['required', 'string', 'max:10', $this->uniqueCodeRule($account), new AccountCodeMatchesParent($parent?->id, $request->input('name'))],
+            'code'               => ['required', 'string', 'unique:accounts,code,' . $account->id],
             'name'               => ['required', 'string', 'max:255'],
-            'normal_balance'     => ['nullable', 'string', 'in:Debet,Kredit'],
+            'type'               => ['required', 'string'],
+            'normal_balance'     => ['required', 'string', 'in:Debet,Kredit'],
+            'report_category'    => ['required', 'string', 'in:Neraca,Laba Rugi'],
             'cash_flow_category' => ['nullable', 'string'],
-        ], $this->accountMessages());
+            'parent_id'          => ['nullable', 'exists:accounts,id'],
+        ]);
 
-        $account->update($this->accountAttributes($request, $parent) + ['code' => $request->code]);
+        $account->update($request->all());
 
         return back()->with('success', 'Akun COA berhasil diperbarui.');
     }
 
     public function deleteAccount(Account $account)
     {
-        $blocker = $this->deletionBlocker($account);
-
-        if ($blocker) {
-            return back()->with('error', "Akun ini tidak dapat dihapus karena {$blocker}.");
+        if ($account->journalEntryLines()->count() > 0) {
+            return back()->with('error', 'Akun ini tidak dapat dihapus karena sudah memiliki transaksi jurnal.');
         }
 
         $account->delete();
@@ -102,7 +96,7 @@ class MasterController extends Controller
         foreach ($request->ids as $id) {
             $account = Account::find($id);
             if ($account) {
-                if ($this->deletionBlocker($account)) {
+                if ($account->journalEntryLines()->count() > 0) {
                     $failedCount++;
                     continue;
                 }
@@ -113,89 +107,10 @@ class MasterController extends Controller
 
         $msg = "Berhasil menghapus {$count} akun COA.";
         if ($failedCount > 0) {
-            $msg .= " ({$failedCount} akun dilewati karena terkunci, punya sub-akun, atau sudah memiliki transaksi).";
+            $msg .= " ({$failedCount} akun dilewati karena sudah memiliki transaksi).";
         }
 
         return back()->with('success', $msg);
-    }
-
-    /**
-     * Akun baru selalu sub-akun, karena akun induk dikelola terpusat.
-     */
-    private function validatedParent(Request $request): Account
-    {
-        $request->validate([
-            'parent_id' => ['required', 'integer', 'exists:accounts,id'],
-        ], [
-            'parent_id.required' => 'Pilih akun induk.',
-            'parent_id.exists'   => 'Akun induk tidak ditemukan.',
-        ]);
-
-        return Account::findOrFail($request->integer('parent_id'));
-    }
-
-    private function accountMessages(): array
-    {
-        return [
-            'code.required'     => 'Kode akun wajib diisi.',
-            'code.max'          => 'Kode akun maksimal 10 karakter.',
-            'name.required'     => 'Nama akun wajib diisi.',
-            'name.max'          => 'Nama akun maksimal 255 karakter.',
-            'normal_balance.in' => 'Saldo normal harus Debet atau Kredit.',
-        ];
-    }
-
-    /**
-     * Kode akun unik, termasuk akun yang sudah dihapus: barisnya masih ada dan kolom code berindeks unik.
-     */
-    private function uniqueCodeRule(?Account $ignore = null): \Closure
-    {
-        return function (string $attribute, mixed $value, \Closure $fail) use ($ignore) {
-            $existing = Account::withTrashed()
-                ->where('code', $value)
-                ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
-                ->first();
-
-            if (! $existing) {
-                return;
-            }
-
-            $fail($existing->trashed()
-                ? "Kode {$value} pernah dipakai akun '{$existing->name}' yang sudah dihapus. Gunakan kode lain."
-                : "Kode {$value} sudah dipakai akun '{$existing->name}'.");
-        };
-    }
-
-    /**
-     * Tipe dan kategori mengikuti induk. Saldo normal boleh berbeda untuk akun kontra, seperti Akumulasi Penyusutan.
-     */
-    private function accountAttributes(Request $request, Account $parent): array
-    {
-        return [
-            'name'               => $request->name,
-            'type'               => $parent->type,
-            'normal_balance'     => $request->input('normal_balance') ?: $parent->normal_balance,
-            'report_category'    => $parent->report_category,
-            'cash_flow_category' => $request->input('cash_flow_category') ?: null,
-            'parent_id'          => $parent->id,
-        ];
-    }
-
-    private function deletionBlocker(Account $account): ?string
-    {
-        if ($account->is_locked) {
-            return 'terkunci dan sama di semua unit';
-        }
-
-        if ($account->children()->exists()) {
-            return 'masih memiliki sub-akun';
-        }
-
-        if ($account->journalEntryLines()->exists()) {
-            return 'sudah memiliki transaksi jurnal';
-        }
-
-        return null;
     }
 
     public function fiscalPeriods(): Response
@@ -207,53 +122,62 @@ class MasterController extends Controller
         ]);
     }
 
-    public function storeFiscalPeriod(Request $request, FiscalCalendar $calendar)
+    public function storeFiscalPeriod(Request $request)
     {
         $request->validate([
             'name'       => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date', 'unique:central.calendar_periods,start_date'],
+            'start_date' => ['required', 'date'],
             'end_date'   => ['required', 'date', 'after_or_equal:start_date'],
         ]);
 
-        $failed = $calendar->addPeriod($request->name, $request->start_date, $request->end_date);
+        FiscalPeriod::create([
+            'name'       => $request->name,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date,
+            'status'     => 'open',
+        ]);
 
-        if ($failed !== []) {
-            return back()->with('warning', 'Periode dibuat, tetapi belum masuk ke unit: ' . implode(', ', $failed) . '. Hubungi Tim IT.');
-        }
-
-        return back()->with('success', 'Periode Akuntansi berhasil dibuat di semua unit.');
+        return back()->with('success', 'Periode Akuntansi berhasil dibuat.');
     }
 
-    /**
-     * Tanggal periode sama di semua unit, jadi yang bisa diubah per unit hanya statusnya.
-     */
     public function updateFiscalPeriod(Request $request, FiscalPeriod $fiscalPeriod)
     {
         $request->validate([
-            'status' => ['required', 'in:open,reopened'],
+            'name'       => ['required', 'string', 'max:255'],
+            'start_date' => ['required', 'date'],
+            'end_date'   => ['required', 'date', 'after_or_equal:start_date'],
+            'status'     => ['nullable', 'in:open,reopened'],
         ]);
 
-        if ($fiscalPeriod->status === 'closed') {
-            return back()->with('error', 'Periode yang sudah ditutup hanya bisa dibuka lewat Buka Ulang.');
+        $data = [
+            'name'       => $request->name,
+            'start_date' => $request->start_date,
+            'end_date'   => $request->end_date,
+        ];
+
+        if ($request->has('status') && $fiscalPeriod->status !== 'closed') {
+            $data['status'] = $request->status;
         }
 
-        $fiscalPeriod->update(['status' => $request->status]);
+        $fiscalPeriod->update($data);
 
-        return back()->with('success', 'Status periode berhasil diperbarui.');
+        return back()->with('success', 'Periode Akuntansi berhasil diperbarui.');
     }
 
-    public function deleteFiscalPeriod(FiscalPeriod $fiscalPeriod, FiscalCalendar $calendar)
+    public function deleteFiscalPeriod(FiscalPeriod $fiscalPeriod)
     {
-        $startDate = $fiscalPeriod->start_date->toDateString();
-        $blocker = $calendar->removalBlocker($startDate);
-
-        if ($blocker) {
-            return back()->with('error', "Gagal menghapus: {$blocker}.");
+        if ($fiscalPeriod->status === 'closed') {
+            return back()->with('error', 'Gagal menghapus: Periode yang sudah ditutup tidak bisa dihapus.');
         }
 
-        $calendar->removePeriod($startDate);
+        $journalCount = \App\Models\JournalEntry::where('fiscal_period_id', $fiscalPeriod->id)->count();
+        if ($journalCount > 0) {
+            return back()->with('error', "Gagal menghapus: Periode ini sudah memiliki {$journalCount} entri jurnal.");
+        }
 
-        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dihapus dari semua unit.");
+        $fiscalPeriod->delete();
+
+        return back()->with('success', "Periode '{$fiscalPeriod->name}' berhasil dihapus.");
     }
 
     public function reopenFiscalPeriod(FiscalPeriod $fiscalPeriod)

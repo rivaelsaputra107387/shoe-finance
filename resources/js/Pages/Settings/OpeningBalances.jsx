@@ -179,7 +179,7 @@ export default function OpeningBalances({
 
     return (
         <AppLayout title="Saldo Awal Neraca">
-            <Head title="Saldo Awal Neraca" />
+            <Head title="Saldo Awal Neraca - SIA Shoe Workshop" />
 
             <div className="space-y-6 pb-24">
                 {/* Header Section */}

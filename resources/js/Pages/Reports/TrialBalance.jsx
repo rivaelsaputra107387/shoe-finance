@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { currentUnitCode } from '@/Utils/unitContext';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
@@ -23,7 +22,7 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
 
     return (
         <AppLayout title="Neraca Lajur (Trial Balance)">
-            <Head title="Neraca Lajur" />
+            <Head title="Neraca Lajur - SIA Shoe Workshop" />
 
             <div className="space-y-6">
                 {/* Header & Controls Bar */}
@@ -52,7 +51,7 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
 
 
                         <a
-                            href={`/app/trial-balance/export?unit=${currentUnitCode()}&format=pdf&fiscal_period_id=${periodId}`}
+                            href={`/app/trial-balance/export?format=pdf&fiscal_period_id=${periodId}`}
                             target="_blank"
                             className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                         >
@@ -61,7 +60,7 @@ export default function TrialBalance({ periods, selectedPeriodId, reportData }) 
                         </a>
                         
                         <a
-                            href={`/app/trial-balance/export?unit=${currentUnitCode()}&format=excel&fiscal_period_id=${periodId}`}
+                            href={`/app/trial-balance/export?format=excel&fiscal_period_id=${periodId}`}
                             className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                         >
                             <FileSpreadsheet className="w-4 h-4" />

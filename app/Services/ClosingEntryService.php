@@ -21,7 +21,7 @@ class ClosingEntryService
      * 4. Close Prive (3120) → Laba Ditahan (3300), if any
      *    Modal Disetor (3110) only changes through actual capital contributions.
      * 5. Mark period as closed
-     * 6. Take the next period from the shared calendar, adding it when missing
+     * 6. Create next period
      *
      * @throws \Exception if period is already closed or validation fails
      */
@@ -58,9 +58,7 @@ class ClosingEntryService
 
         $closingEntries = [];
 
-        $calendar = app(FiscalCalendar::class);
-
-        $result = DB::transaction(function () use ($period, $ikhtisarAccount, $labaDitahanAccount, $createdBy, $closingDate, $fiscalPeriodId, $calendar) {
+        return DB::transaction(function () use ($period, $ikhtisarAccount, $labaDitahanAccount, $createdBy, $closingDate, $fiscalPeriodId) {
             // Defensively cleanup any existing closing entries for this period (e.g. from prior reopen)
             $existingClosing = JournalEntry::where('fiscal_period_id', $fiscalPeriodId)
                 ->where('is_closing', true)
@@ -206,7 +204,15 @@ class ClosingEntryService
             $nextEnd = $nextStart->copy()->endOfMonth();
             $nextName = $nextStart->translatedFormat('F Y');
 
-            $nextPeriod = $calendar->nextPeriodForActiveUnit($nextStart, $nextEnd, $nextName);
+            $nextPeriod = FiscalPeriod::where('start_date', $nextStart)->first();
+            if (!$nextPeriod) {
+                $nextPeriod = FiscalPeriod::create([
+                    'name' => $nextName,
+                    'start_date' => $nextStart,
+                    'end_date' => $nextEnd,
+                    'status' => 'open',
+                ]);
+            }
 
             return [
                 'closing_entries' => $closingEntries,
@@ -215,11 +221,6 @@ class ClosingEntryService
                 'new_period' => $nextPeriod,
             ];
         });
-
-        // Unit lain menyusul setelah transaksi selesai. Yang gagal bisa diulang dengan finlog:calendar-sync.
-        $calendar->syncAllUnits();
-
-        return $result;
     }
 
     /**

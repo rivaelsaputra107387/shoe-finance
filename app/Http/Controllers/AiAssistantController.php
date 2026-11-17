@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\UnitContext;
 use App\Models\Account;
 use App\Models\AiChatLog;
 use App\Models\AiChatSession;
@@ -38,7 +37,7 @@ class AiAssistantController extends Controller
             $sessionId = $session->id;
         }
 
-        $apiKey = config('services.gemini.key');
+        $apiKey = env('GEMINI_API_KEY');
         if (!$apiKey) {
             return response()->json(['error' => 'GEMINI_API_KEY is missing.'], 500);
         }
@@ -205,7 +204,7 @@ class AiAssistantController extends Controller
 
     private function getSystemPrompt(): string
     {
-        $prompt = "Anda adalah Finlog AI Assistant, asisten cerdas khusus untuk divisi Finance " . (app(UnitContext::class)->current()?->name ?? 'Shoe Workshop') . ".\n";
+        $prompt = "Anda adalah Finlog AI Assistant, asisten cerdas khusus untuk divisi Finance Shoe Workshop.\n";
         $prompt .= "Anda bertugas membantu mengelola dan memahami Sistem Informasi Akuntansi (SIA) Finlog.\n\n";
         $prompt .= "Gunakan bahasa Indonesia yang profesional, ramah, dan ringkas. Gunakan format Markdown (bold, tabel, list) agar mudah dibaca.\n";
         $prompt .= "Jangan menjawab hal di luar konteks sistem ini. Tolak permintaan password/kredensial.\n\n";

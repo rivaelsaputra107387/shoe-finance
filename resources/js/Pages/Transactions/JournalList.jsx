@@ -298,7 +298,7 @@ export default function JournalList({ entries, filters }) {
 
     return (
         <AppLayout title="Daftar Jurnal Umum">
-            <Head title="Daftar Jurnal Umum" />
+            <Head title="Daftar Jurnal Umum - SIA Shoe Workshop" />
 
             <div className="space-y-6">
                 {/* Top Title Bar */}

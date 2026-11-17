@@ -63,7 +63,7 @@ export default function CreateJournal({ periods, accounts }) {
 
     return (
         <AppLayout title="Input Jurnal Baru">
-            <Head title="Input Jurnal Baru" />
+            <Head title="Input Jurnal Baru - SIA Shoe Workshop" />
 
             <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">

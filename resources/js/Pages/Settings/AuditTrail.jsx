@@ -103,7 +103,7 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
 
     return (
         <AppLayout title="Audit Trail Keamanan">
-            <Head title="Audit Trail" />
+            <Head title="Audit Trail - SIA Shoe Workshop" />
 
             <div className="space-y-6">
                 <div>
