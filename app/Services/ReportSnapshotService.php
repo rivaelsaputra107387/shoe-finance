@@ -66,7 +66,7 @@ class ReportSnapshotService
 
         $differences = [];
         $this->diff($before['data'] ?? [], $after['data'] ?? [], 'data', $differences);
-        $this->diff($before['reports'] ?? [], $after['reports'] ?? [], 'reports', $differences);
+        $this->diff($this->canonicalize($before['reports'] ?? []), $this->canonicalize($after['reports'] ?? []), 'reports', $differences);
 
         return $differences;
     }
@@ -183,6 +183,31 @@ class ReportSnapshotService
         }
 
         return is_float($value) ? round($value, 2) : $value;
+    }
+
+    /**
+     * Baris Arus Kas tidak punya urutan tetap karena query-nya tanpa ORDER BY, dan keterangannya
+     * adalah gabungan teks jurnal dengan urutan yang sama. Yang dibandingkan adalah angka per akun.
+     */
+    private function canonicalize(array $value): array
+    {
+        foreach ($value as $key => $item) {
+            if (is_array($item)) {
+                $value[$key] = $this->canonicalize($item);
+            }
+        }
+
+        if ($value !== [] && array_is_list($value) && is_array($value[0]) && array_key_exists('account_code', $value[0])) {
+            usort($value, fn (array $a, array $b) => strcmp((string) $a['account_code'], (string) $b['account_code']));
+
+            return array_map(function (array $row) {
+                unset($row['description']);
+
+                return $row;
+            }, $value);
+        }
+
+        return $value;
     }
 
     private function diff(mixed $before, mixed $after, string $path, array &$differences): void

@@ -21,7 +21,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'email' => 'required|string|email|max:255|unique:central.users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
             'photo' => 'nullable|image|max:2048', // max 2MB
         ]);

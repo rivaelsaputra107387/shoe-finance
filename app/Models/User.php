@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Central\Unit;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -46,10 +46,12 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutRole($roles, $guard = null)
  * @mixin \Eloquent
  */
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable;
+
+    protected $connection = 'central';
 
     /**
      * The attributes that are mass assignable.
@@ -88,6 +90,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'deactivated_at' => 'datetime',
         ];
     }
 
@@ -101,20 +104,56 @@ class User extends Authenticatable implements FilamentUser
     }
 
     // ───────────────────────────────────────
-    // Filament
-    // ───────────────────────────────────────
-
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->hasAnyRole(['owner', 'finance']);
-    }
-
-    // ───────────────────────────────────────
     // Relationships
     // ───────────────────────────────────────
 
-    public function journalEntries(): HasMany
+    public function units(): BelongsToMany
     {
-        return $this->hasMany(JournalEntry::class, 'created_by');
+        return $this->belongsToMany(Unit::class, 'unit_user')->withPivot('granted_by')->withTimestamps();
+    }
+
+    // ───────────────────────────────────────
+    // Akses Unit
+    // ───────────────────────────────────────
+
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
+    }
+
+    /**
+     * Unit yang boleh dibuka. Owner otomatis semua unit, dan Staff tidak melihat unit persiapan.
+     */
+    public function accessibleUnits(): Collection
+    {
+        if ($this->hasRole('owner')) {
+            return Unit::ordered()->get();
+        }
+
+        $units = $this->units()->ordered()->get();
+
+        return $this->hasRole('finance')
+            ? $units
+            : $units->reject(fn (Unit $unit) => $unit->isInPreparation())->values();
+    }
+
+    public function canAccessUnit(Unit $unit): bool
+    {
+        return $this->accessibleUnits()->contains('id', $unit->id);
+    }
+
+    /**
+     * Laporan Gabungan memuat angka semua unit, jadi hanya untuk Owner dan Finance yang mengakses semua unit aktif.
+     */
+    public function canViewConsolidated(): bool
+    {
+        if (! $this->hasAnyRole(['owner', 'finance'])) {
+            return false;
+        }
+
+        $activeUnits = Unit::where('status', Unit::STATUS_ACTIVE)->pluck('id');
+        $accessible = $this->accessibleUnits()->pluck('id');
+
+        return $activeUnits->isNotEmpty() && $activeUnits->diff($accessible)->isEmpty();
     }
 }

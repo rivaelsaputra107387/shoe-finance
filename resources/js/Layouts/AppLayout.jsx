@@ -3,6 +3,8 @@ import { Link, usePage, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import FinlogAiWidget from '@/Components/FinlogAiWidget';
 import LoginBear from '@/Components/LoginBear';
+import UnitConflictModal from '@/Components/UnitConflictModal';
+import UnitSwitcher from '@/Components/UnitSwitcher';
 import {
     LayoutDashboard,
     FileText,
@@ -34,7 +36,7 @@ import {
 } from 'lucide-react';
 
 export default function AppLayout({ children, title }) {
-    const { auth, flash, url } = usePage().props;
+    const { auth, flash, url, unit } = usePage().props;
     const [darkMode, setDarkMode] = useState(() => {
         return localStorage.getItem('theme') === 'dark' ||
             (!('theme' in localStorage) && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -68,7 +70,7 @@ export default function AppLayout({ children, title }) {
         {
             group: 'Transaksi',
             items: [
-                { name: 'Pengajuan Belanja', href: '/app/purchase-requests', icon: ShoppingCart, show: true },
+                { name: 'Pengajuan Belanja', href: '/app/purchase-requests', icon: ShoppingCart, show: Boolean(unit?.hasPurchaseRequests) },
                 { name: 'Transaksi', href: '/app/bank-mutations', icon: Building2, show: true },
                 { name: 'Draft Jurnal', href: '/app/draft-journals', icon: BookOpen, show: true },
                 { name: 'Daftar Jurnal', href: '/app/journal-entries', icon: FileText, show: true },
@@ -84,6 +86,16 @@ export default function AppLayout({ children, title }) {
                 { name: 'Neraca', href: '/app/balance-sheet', icon: Scale, show: isOwnerOrFinance },
                 { name: 'Perubahan Ekuitas', href: '/app/equity-statement', icon: PieChart, show: isOwnerOrFinance },
                 { name: 'Arus Kas', href: '/app/cash-flow-statement', icon: Receipt, show: isOwnerOrFinance },
+            ].filter(i => i.show),
+        },
+        {
+            group: 'Laporan Gabungan',
+            items: [
+                { name: 'Laba Rugi Gabungan', href: '/app/consolidated/income-statement', icon: TrendingUp, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Neraca Gabungan', href: '/app/consolidated/balance-sheet', icon: Scale, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Perubahan Ekuitas Gabungan', href: '/app/consolidated/equity-statement', icon: PieChart, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Arus Kas Gabungan', href: '/app/consolidated/cash-flow', icon: Receipt, show: Boolean(unit?.canViewConsolidated) },
+                { name: 'Cek Kecocokan Antar Unit', href: '/app/consolidated/reconciliation', icon: ShieldCheck, show: Boolean(unit?.canViewConsolidated) },
             ].filter(i => i.show),
         },
         {
@@ -139,7 +151,7 @@ export default function AppLayout({ children, title }) {
                             <img src="/logo.png" alt="Shoe Workshop Logo" className="h-8 w-auto object-contain" />
                             <div className="flex flex-col">
                                 <span className="font-extrabold tracking-tight text-gray-900 dark:text-white leading-none text-sm">
-                                    Shoe Workshop
+                                    {unit?.active?.name || 'Mode Gabungan'}
                                 </span>
                                 <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-0.5">
                                     SIA Finance
@@ -231,6 +243,8 @@ export default function AppLayout({ children, title }) {
 
                         {/* Topbar Actions */}
                         <div className="flex items-center gap-3">
+                            <UnitSwitcher />
+
                             <button
                                 onClick={() => setAiWidgetOpen(true)}
                                 title="Buka Finlog AI Assistant"
@@ -304,6 +318,8 @@ export default function AppLayout({ children, title }) {
                 onConfirm={() => router.post('/logout')}
                 onClose={() => setLogoutModalOpen(false)}
             />
+
+            <UnitConflictModal />
 
             {/* AI Assistant Widget */}
             <FinlogAiWidget 

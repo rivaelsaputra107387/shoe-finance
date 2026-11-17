@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,9 +22,8 @@ class AuditTrailController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->whereHas('user', function ($u) use ($search) {
-                    $u->where('name', 'like', "%{$search}%");
-                })
+                // Pengguna ada di database pusat, jadi tidak bisa memakai whereHas lintas database.
+                $q->whereIn('user_id', User::where('name', 'like', "%{$search}%")->pluck('id'))
                 ->orWhere('table_name', 'like', "%{$search}%")
                 ->orWhere('action', 'like', "%{$search}%")
                 ->orWhere('old_data', 'like', "%{$search}%")

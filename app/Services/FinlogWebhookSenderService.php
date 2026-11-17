@@ -22,7 +22,11 @@ class FinlogWebhookSenderService
             ]
         ];
 
-        $secret = config('services.workshop.hmac_secret') ?: env('HMAC_SECRET', 'default_hmac_secret');
+        $secret = config('services.workshop.hmac_secret') ?: env('HMAC_SECRET');
+
+        if (! $secret) {
+            throw new \RuntimeException('HMAC_SECRET belum dikonfigurasi.');
+        }
         $signature = hash_hmac('sha256', json_encode($payload), $secret);
 
         $response = Http::timeout(10)->withHeaders([

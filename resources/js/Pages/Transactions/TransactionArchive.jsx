@@ -102,7 +102,7 @@ export default function TransactionArchive({ mutations, filters = {} }) {
 
     return (
         <AppLayout title="Arsip Transaksi">
-            <Head title="Arsip Transaksi - SIA Shoe Workshop" />
+            <Head title="Arsip Transaksi" />
 
             <div className="space-y-6">
                 {/* Header */}

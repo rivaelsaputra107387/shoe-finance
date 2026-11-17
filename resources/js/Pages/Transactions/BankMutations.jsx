@@ -420,7 +420,7 @@ export default function BankMutations({ mutations, filters }) {
 
     return (
         <AppLayout title="Transaksi">
-            <Head title="Transaksi - SIA Shoe Workshop" />
+            <Head title="Transaksi" />
 
             <div className="space-y-6">
                 {/* Top Action Bar */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { currentUnitCode, currentUnitName } from '@/Utils/unitContext';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CustomSelect from '@/Components/CustomSelect';
@@ -41,7 +42,7 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
 
     return (
         <AppLayout title="Buku Besar (General Ledger)">
-            <Head title="Buku Besar - SIA Shoe Workshop" />
+            <Head title="Buku Besar" />
 
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -52,7 +53,7 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
                                 Buku Besar Per Akun
                             </h2>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Shoe Workshop Finance • Rincian mutasi debit, kredit, dan saldo berjalan per akun.
+                                {currentUnitName()} • Rincian mutasi debit, kredit, dan saldo berjalan per akun.
                             </p>
                         </div>
                     </div>
@@ -60,7 +61,7 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
                     <div className="flex items-center gap-2 self-end sm:self-auto">
 
                         <a
-                            href={`/app/general-ledger/export?format=pdf&account_id=${accountId}&fiscal_period_id=${periodId}`}
+                            href={`/app/general-ledger/export?unit=${currentUnitCode()}&format=pdf&account_id=${accountId}&fiscal_period_id=${periodId}`}
                             target="_blank"
                             className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                         >
@@ -69,7 +70,7 @@ export default function GeneralLedger({ accounts, periods, selectedAccountId, se
                         </a>
                         
                         <a
-                            href={`/app/general-ledger/export?format=excel&account_id=${accountId}&fiscal_period_id=${periodId}`}
+                            href={`/app/general-ledger/export?unit=${currentUnitCode()}&format=excel&account_id=${accountId}&fiscal_period_id=${periodId}`}
                             className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2 shadow-sm"
                         >
                             <FileSpreadsheet className="w-4 h-4" />

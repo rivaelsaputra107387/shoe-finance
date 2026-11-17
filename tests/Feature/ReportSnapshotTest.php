@@ -8,24 +8,18 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\User;
 use App\Services\ReportSnapshotService;
-use Database\Seeders\AccountSeeder;
-use Database\Seeders\FiscalPeriodSeeder;
-use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
+use Tests\MultiUnitTestCase;
 
-class ReportSnapshotTest extends TestCase
+class ReportSnapshotTest extends MultiUnitTestCase
 {
-    use RefreshDatabase;
-
     private string $directory;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed([RolePermissionSeeder::class, FiscalPeriodSeeder::class, AccountSeeder::class]);
+        $this->context()->activate($this->unitA);
 
         $this->directory = sys_get_temp_dir().'/finlog-snapshot-test-'.uniqid();
         mkdir($this->directory);
@@ -66,7 +60,7 @@ class ReportSnapshotTest extends TestCase
     {
         $path = "{$this->directory}/{$name}.json";
 
-        $this->artisan('finlog:report-snapshot', ['--output' => $path])->assertSuccessful();
+        $this->artisan('finlog:report-snapshot', ['--unit' => 'unit_a', '--output' => $path])->assertSuccessful();
 
         return $path;
     }
@@ -96,6 +90,7 @@ class ReportSnapshotTest extends TestCase
     public function test_requested_period_must_exist(): void
     {
         $this->artisan('finlog:report-snapshot', [
+            '--unit' => 'unit_a',
             '--output' => "{$this->directory}/x.json",
             '--period' => ['1999-01-01'],
         ])->assertFailed();
@@ -170,9 +165,42 @@ class ReportSnapshotTest extends TestCase
         $this->assertSame([], $service->compare($before, $after));
     }
 
+    private function cashFlowSnapshot(array $rows): array
+    {
+        return ['format_version' => 1, 'data' => [], 'reports' => ['2026-10-01' => ['cash_flow' => ['operating' => $rows]]]];
+    }
+
+    public function test_cash_flow_row_order_and_text_are_ignored(): void
+    {
+        $before = $this->cashFlowSnapshot([
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'a, b'],
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+        ]);
+        $after = $this->cashFlowSnapshot([
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'b, a'],
+        ]);
+
+        $this->assertSame([], app(ReportSnapshotService::class)->compare($before, $after));
+    }
+
+    public function test_cash_flow_amount_change_is_still_detected_when_rows_are_reordered(): void
+    {
+        $before = $this->cashFlowSnapshot([
+            ['account_code' => '4170', 'amount' => 100, 'description' => 'a'],
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+        ]);
+        $after = $this->cashFlowSnapshot([
+            ['account_code' => '4180', 'amount' => 200, 'description' => 'c'],
+            ['account_code' => '4170', 'amount' => 101, 'description' => 'a'],
+        ]);
+
+        $this->assertNotSame([], app(ReportSnapshotService::class)->compare($before, $after));
+    }
+
     public function test_output_inside_the_repo_is_refused_outside_storage(): void
     {
-        $this->artisan('finlog:report-snapshot', ['--output' => base_path('snapshot-test.json')])->assertFailed();
+        $this->artisan('finlog:report-snapshot', ['--unit' => 'unit_a', '--output' => base_path('snapshot-test.json')])->assertFailed();
 
         $this->assertFileDoesNotExist(base_path('snapshot-test.json'));
     }
@@ -181,8 +209,8 @@ class ReportSnapshotTest extends TestCase
     {
         $path = $this->snapshotToFile('a');
 
-        $this->artisan('finlog:report-snapshot', ['--output' => $path])->assertFailed();
-        $this->artisan('finlog:report-snapshot', ['--output' => $path, '--force' => true])->assertSuccessful();
+        $this->artisan('finlog:report-snapshot', ['--unit' => 'unit_a', '--output' => $path])->assertFailed();
+        $this->artisan('finlog:report-snapshot', ['--unit' => 'unit_a', '--output' => $path, '--force' => true])->assertSuccessful();
     }
 
     public function test_snapshot_file_is_private(): void

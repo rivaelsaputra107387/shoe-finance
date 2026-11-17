@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Central\Unit;
+use App\Models\User;
+use App\Support\UnitContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->getRoleNames()->toArray(),
                 ] : null,
             ],
+            'unit' => fn () => $user ? $this->unitProps($user) : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
@@ -49,5 +53,23 @@ class HandleInertiaRequests extends Middleware
                 'info' => fn () => $request->session()->get('info'),
             ],
         ]);
+    }
+
+    private function unitProps(User $user): array
+    {
+        $active = app(UnitContext::class)->current();
+
+        return [
+            'active' => $active ? [
+                'code' => $active->code,
+                'name' => $active->name,
+                'status' => $active->status,
+            ] : null,
+            'available' => $user->accessibleUnits()
+                ->map(fn (Unit $unit) => ['id' => $unit->id, 'code' => $unit->code, 'name' => $unit->name, 'status' => $unit->status])
+                ->values(),
+            'canViewConsolidated' => $user->canViewConsolidated(),
+            'hasPurchaseRequests' => $active?->code === config('finlog.purchase_request_unit'),
+        ];
     }
 }

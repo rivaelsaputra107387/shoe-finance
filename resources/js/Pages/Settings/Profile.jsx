@@ -80,7 +80,7 @@ export default function Profile() {
 
     return (
         <AppLayout title="Edit Profil">
-            <Head title="Edit Profil - SIA Shoe Workshop" />
+            <Head title="Edit Profil" />
 
             <div className="max-w-7xl mx-auto space-y-8">
                 <div>
