@@ -16,6 +16,11 @@ use Inertia\Response;
 class OpeningBalanceController extends Controller
 {
     /**
+     * Laba Ditahan boleh bersaldo debit (defisit) di saldo awal, karena akumulasi rugi dicatat di akun ini.
+     */
+    private const DEFICIT_ACCOUNT_CODE = '3300';
+
+    /**
      * Display the Opening Balance (Saldo Awal) setup table.
      */
     public function index(Request $request): Response
@@ -80,13 +85,16 @@ class OpeningBalanceController extends Controller
                         : ($line['credit'] - $line['debit']);
                 }
 
+                $allowsDeficit = $account->code === self::DEFICIT_ACCOUNT_CODE;
+
                 return [
                     'id'             => $account->id,
                     'code'           => $account->code,
                     'name'           => $account->name,
                     'type'           => $account->type,
                     'normal_balance' => $account->normal_balance,
-                    'amount'         => max(0, round($currentAmount, 2)),
+                    'amount'         => $allowsDeficit ? round($currentAmount, 2) : max(0, round($currentAmount, 2)),
+                    'allows_deficit' => $allowsDeficit,
                 ];
             });
 
@@ -120,7 +128,7 @@ class OpeningBalanceController extends Controller
             'entry_date'             => ['required', 'date'],
             'balances'               => ['required', 'array', 'min:1'],
             'balances.*.account_id'  => ['required', 'exists:accounts,id'],
-            'balances.*.amount'      => ['required', 'numeric', 'min:0'],
+            'balances.*.amount'      => ['required', 'numeric'],
         ]);
 
         $period = FiscalPeriod::findOrFail($request->fiscal_period_id);
@@ -145,13 +153,23 @@ class OpeningBalanceController extends Controller
         $linesToInsert = [];
 
         foreach ($request->balances as $item) {
-            $amount = (float) ($item['amount'] ?? 0);
-            if ($amount <= 0) continue;
+            $signedAmount = round((float) ($item['amount'] ?? 0), 2);
+            if (abs($signedAmount) < 0.01) continue;
 
             $account = $accountMap->get($item['account_id']);
             if (!$account) continue;
 
-            if ($account->normal_balance === 'Debet') {
+            if ($signedAmount < 0 && $account->code !== self::DEFICIT_ACCOUNT_CODE) {
+                throw ValidationException::withMessages([
+                    'balances' => "Saldo awal akun {$account->code} {$account->name} tidak boleh minus. Hanya Laba Ditahan (3300) yang bisa diisi defisit.",
+                ]);
+            }
+
+            // Angka minus (defisit) dicatat di sisi kebalikan saldo normal.
+            $amount = abs($signedAmount);
+            $onDebitSide = ($account->normal_balance === 'Debet') !== ($signedAmount < 0);
+
+            if ($onDebitSide) {
                 $totalDebit += $amount;
                 $linesToInsert[] = [
                     'account_id'  => $account->id,
@@ -172,7 +190,7 @@ class OpeningBalanceController extends Controller
 
         if (empty($linesToInsert)) {
             throw ValidationException::withMessages([
-                'balances' => 'Harap isi minimal satu akun dengan nominal saldo awal lebih dari 0.',
+                'balances' => 'Harap isi minimal satu akun dengan nominal saldo awal.',
             ]);
         }
 

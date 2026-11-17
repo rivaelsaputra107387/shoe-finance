@@ -27,10 +27,27 @@ export default function OpeningBalances({
     const [balances, setBalances] = useState(() => {
         const initial = {};
         accounts.forEach((acc) => {
-            initial[acc.id] = acc.amount || 0;
+            initial[acc.id] = Math.abs(acc.amount || 0);
         });
         return initial;
     });
+
+    // Akun yang diisi sebagai defisit (hanya Laba Ditahan): dicatat di sisi kebalikan saldo normal.
+    const initialDeficits = () => {
+        const initial = {};
+        accounts.forEach((acc) => {
+            initial[acc.id] = Boolean(acc.allows_deficit && acc.amount < 0);
+        });
+        return initial;
+    };
+    const [deficits, setDeficits] = useState(initialDeficits);
+
+    const isDebitSide = (acc) => (acc.normal_balance === 'Debet') !== Boolean(deficits[acc.id]);
+
+    const toggleDeficit = (accountId) => {
+        if (!canEdit) return;
+        setDeficits((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
+    };
 
     const [entryDate, setEntryDate] = useState(() => {
         if (openingJournal?.entry_date) return openingJournal.entry_date;
@@ -63,7 +80,7 @@ export default function OpeningBalances({
             const val = parseFloat(balances[acc.id]) || 0;
             if (val > 0) {
                 count++;
-                if (acc.normal_balance === 'Debet') {
+                if (isDebitSide(acc)) {
                     deb += val;
                 } else {
                     cre += val;
@@ -81,7 +98,7 @@ export default function OpeningBalances({
             isBalanced: balanced,
             filledCount: count,
         };
-    }, [balances, accounts]);
+    }, [balances, deficits, accounts]);
 
     // Filter accounts by search & type tab
     const filteredAccounts = useMemo(() => {
@@ -121,9 +138,10 @@ export default function OpeningBalances({
         if (confirm('Kembalikan semua input ke saldo sebelumnya?')) {
             const resetObj = {};
             accounts.forEach((acc) => {
-                resetObj[acc.id] = acc.amount || 0;
+                resetObj[acc.id] = Math.abs(acc.amount || 0);
             });
             setBalances(resetObj);
+            setDeficits(initialDeficits());
             setErrorMessage('');
         }
     };
@@ -137,7 +155,7 @@ export default function OpeningBalances({
 
         const payloadBalances = Object.keys(balances).map((accId) => ({
             account_id: parseInt(accId),
-            amount: balances[accId] || 0,
+            amount: deficits[accId] ? -(balances[accId] || 0) : balances[accId] || 0,
         }));
 
         router.post(
@@ -178,6 +196,7 @@ export default function OpeningBalances({
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-2xl">
                             Inisialisasi posisi saldo awal seluruh akun Neraca (Aset, Kewajiban, dan Ekuitas) saat migrasi ke sistem Finlog.
                             Sistem mewajibkan <strong>Total Debit = Total Kredit</strong> agar pembukuan dijamin seimbang dari hari pertama.
+                            Jika akumulasi usaha masih rugi, isi 3300 Laba Ditahan lalu centang <strong>Defisit (rugi)</strong> agar tercatat di sisi Debit.
                         </p>
                     </div>
 
@@ -406,7 +425,7 @@ export default function OpeningBalances({
                                 ) : (
                                     filteredAccounts.map((acc) => {
                                         const amount = balances[acc.id] || 0;
-                                        const isDebit = acc.normal_balance === 'Debet';
+                                        const isDebit = isDebitSide(acc);
 
                                         return (
                                             <tr
@@ -451,6 +470,18 @@ export default function OpeningBalances({
                                                     >
                                                         {acc.normal_balance}
                                                     </span>
+                                                    {acc.allows_deficit && (
+                                                        <label className="mt-1.5 flex items-center justify-center gap-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(deficits[acc.id])}
+                                                                onChange={() => toggleDeficit(acc.id)}
+                                                                disabled={!canEdit}
+                                                                className="rounded border-gray-300 text-rose-600 focus:ring-rose-500"
+                                                            />
+                                                            Defisit (rugi)
+                                                        </label>
+                                                    )}
                                                 </td>
 
                                                 {/* Input Saldo Awal */}
