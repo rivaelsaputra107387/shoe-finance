@@ -143,7 +143,7 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                         {/* Search */}
                         <div className="relative lg:col-span-1">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                Cari Deskripsi
+                                Cari Deskripsi / No. Jurnal
                             </label>
                             <div className="relative">
                                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -151,7 +151,7 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Cari deskripsi transaksi..."
+                                    placeholder="Deskripsi atau MUT-03061..."
                                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-indigo-500 focus:border-indigo-500"
                                 />
                                 {search && (
