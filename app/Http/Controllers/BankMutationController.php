@@ -76,8 +76,11 @@ class BankMutationController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('description', 'like', "%{$search}%");
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                  ->orWhereHas('journalEntry', fn ($journal) => $journal->where('reference', 'like', "%{$search}%"));
+            });
         }
 
         $mutations = $query->paginate(25)->withQueryString();
