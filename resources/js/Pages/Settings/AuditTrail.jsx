@@ -47,7 +47,12 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
     const handlePresetChange = (preset) => {
         setDatePreset(preset);
         const today = new Date();
-        const formatDate = (d) => d.toISOString().split('T')[0];
+        // Tanggal lokal (WIB), bukan toISOString() yang memakai tanggal UTC.
+        const formatDate = (d) => [
+            d.getFullYear(),
+            String(d.getMonth() + 1).padStart(2, '0'),
+            String(d.getDate()).padStart(2, '0'),
+        ].join('-');
 
         if (preset === 'all') {
             setStartDate('');

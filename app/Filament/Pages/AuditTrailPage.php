@@ -40,6 +40,7 @@ class AuditTrailPage extends Page implements HasTable
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Waktu')
                     ->dateTime()
+                    ->timezone(\App\Casts\WibDateTime::TIMEZONE)
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
