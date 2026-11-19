@@ -9,6 +9,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\OpeningBalanceController;
 use App\Http\Controllers\PeriodClosingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PostedJournalCorrectionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,8 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::middleware(['role:owner|finance'])->group(function () {
         Route::post('/journal-entries/bulk-approve', [JournalEntryController::class, 'bulkApprove'])->name('journal-entries.bulk-approve');
         Route::post('/journal-entries/bulk-reject', [JournalEntryController::class, 'bulkReject'])->name('journal-entries.bulk-reject');
+        Route::get('/journal-entries/{journalEntry}/correction', [PostedJournalCorrectionController::class, 'edit'])->name('journal-entries.correction.edit');
+        Route::put('/journal-entries/{journalEntry}/correction', [PostedJournalCorrectionController::class, 'update'])->name('journal-entries.correction.update');
     });
     Route::post('/journal-entries/bulk-delete', [JournalEntryController::class, 'bulkDelete'])->name('journal-entries.bulk-delete');
 

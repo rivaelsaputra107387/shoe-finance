@@ -94,6 +94,8 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
                 return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">Hapus Data</span>;
             case 'close_period':
                 return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800">Tutup Buku</span>;
+            case 'correct_posted':
+                return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800">Koreksi Posted</span>;
             default:
                 return <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300">{actionType?.toUpperCase()}</span>;
         }
@@ -191,6 +193,7 @@ export default function AuditTrail({ auditTrails, usersList = [], filters = {} }
                                 <option value="update">Perubahan Data</option>
                                 <option value="delete">Hapus Data</option>
                                 <option value="close_period">Tutup Buku</option>
+                                <option value="correct_posted">Koreksi Jurnal Posted</option>
                             </CustomSelect>
                         </div>
 

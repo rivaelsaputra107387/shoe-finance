@@ -1,9 +1,36 @@
 import React from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock, Printer } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, History, Pencil, Printer } from 'lucide-react';
 
-export default function ShowJournal({ auth, entry }) {
+function CorrectionLines({ title, lines, formatRupiah }) {
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">{title}</p>
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                <table className="w-full text-xs">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {lines.map((line, index) => (
+                            <tr key={index}>
+                                <td className="py-2 px-3 text-gray-700 dark:text-gray-300">
+                                    <span className="font-mono">{line.code}</span> {line.name}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                                    {line.debit > 0 ? formatRupiah(line.debit) : '-'}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono whitespace-nowrap text-rose-600 dark:text-rose-400">
+                                    {line.credit > 0 ? formatRupiah(line.credit) : '-'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+export default function ShowJournal({ auth, entry, canCorrect = false, corrections = [] }) {
     const formatRupiah = (angka) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -45,10 +72,21 @@ export default function ShowJournal({ auth, entry }) {
                         <span>Kembali ke Daftar</span>
                     </Link>
                     
-                    <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-gray-700 dark:text-gray-300">
-                        <Printer className="w-4 h-4" />
-                        <span>Cetak</span>
-                    </button>
+                    <div className="flex items-center gap-2 print:hidden">
+                        {canCorrect && (
+                            <Link
+                                href={`/app/journal-entries/${entry.id}/correction`}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 rounded-lg text-sm font-semibold transition-colors shadow-sm text-white"
+                            >
+                                <Pencil className="w-4 h-4" />
+                                <span>Koreksi Jurnal</span>
+                            </Link>
+                        )}
+                        <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-gray-700 dark:text-gray-300">
+                            <Printer className="w-4 h-4" />
+                            <span>Cetak</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden print:shadow-none print:border-none">
@@ -146,6 +184,30 @@ export default function ShowJournal({ auth, entry }) {
                     </div>
                     
                 </div>
+
+                {corrections.length > 0 && (
+                    <div className="mt-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 space-y-5 print:hidden">
+                        <div className="flex items-center gap-2">
+                            <History className="w-4 h-4 text-amber-500" />
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Riwayat Koreksi ({corrections.length})</h3>
+                        </div>
+
+                        {corrections.map((correction) => (
+                            <div key={correction.id} className="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-4 first:border-t-0 first:pt-0">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-semibold text-gray-800 dark:text-gray-200">{correction.user}</span>
+                                    {' · '}
+                                    {new Date(correction.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">{correction.reason}</p>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <CorrectionLines title="Sebelum" lines={correction.before} formatRupiah={formatRupiah} />
+                                    <CorrectionLines title="Sesudah" lines={correction.after} formatRupiah={formatRupiah} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </AppLayout>
     );
