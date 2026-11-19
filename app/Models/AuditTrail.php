@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Casts\WibDateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,8 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $action
  * @property array<array-key, mixed>|null $old_data
  * @property array<array-key, mixed>|null $new_data
- * @property \Illuminate\Support\Carbon $created_at
- * @property-read \App\Models\User|null $user
+ * @property Carbon $created_at
+ * @property-read User|null $user
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail byAction(string $action)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail forRecord(string $tableName, int $recordId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail forTable(string $tableName)
@@ -29,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail whereRecordId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail whereTableName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AuditTrail whereUserId($value)
+ *
  * @mixin \Eloquent
  */
 class AuditTrail extends Model
@@ -49,8 +53,16 @@ class AuditTrail extends Model
         return [
             'old_data' => 'array',
             'new_data' => 'array',
-            'created_at' => 'datetime',
+            'created_at' => WibDateTime::class,
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Isi dari aplikasi (WIB) supaya tidak bergantung pada zona server MySQL.
+        static::creating(function (AuditTrail $audit) {
+            $audit->created_at ??= now();
+        });
     }
 
     // ───────────────────────────────────────
