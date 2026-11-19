@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\PostedJournalCorrectionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -169,9 +170,14 @@ class JournalEntryController extends Controller
     public function show(JournalEntry $journalEntry): Response
     {
         $journalEntry->load(['lines.account', 'creator', 'postedBy', 'fiscalPeriod']);
-        
+
+        $canReview = auth()->user()->hasAnyRole(['owner', 'finance']);
+        $corrections = app(PostedJournalCorrectionService::class);
+
         return Inertia::render('Transactions/ShowJournal', [
             'entry' => $journalEntry,
+            'canCorrect' => $canReview && $corrections->blocker($journalEntry) === null,
+            'corrections' => $canReview ? $corrections->history($journalEntry) : [],
         ]);
     }
 

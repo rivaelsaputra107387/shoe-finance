@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\AuditTrail;
+use App\Services\PostedJournalCorrectionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -77,6 +78,7 @@ class AuditTrailController extends Controller
                 'update'       => 'Perubahan Data',
                 'delete'       => 'Hapus Data',
                 'close_period' => 'Tutup Buku',
+                PostedJournalCorrectionService::AUDIT_ACTION => 'Koreksi Jurnal Posted',
                 default        => strtoupper($action),
             };
 
@@ -99,6 +101,7 @@ class AuditTrailController extends Controller
                 'update'       => "{$userName} memperbarui {$tableLabel} ({$recordTitle})",
                 'delete'       => "{$userName} menghapus {$tableLabel} ({$recordTitle})",
                 'close_period' => "{$userName} melakukan Tutup Buku Periode ({$recordTitle})",
+                PostedJournalCorrectionService::AUDIT_ACTION => "{$userName} mengoreksi jurnal posted ({$recordTitle})",
                 default        => "{$userName} melakukan aksi {$actionLabel} pada {$tableLabel} ({$recordTitle})",
             };
 
@@ -160,6 +163,10 @@ class AuditTrailController extends Controller
                 ];
             }
 
+            if ($action === PostedJournalCorrectionService::AUDIT_ACTION) {
+                $diffs = $this->correctionDiffs($oldData, $newData);
+            }
+
             $audit->table_label    = $tableLabel;
             $audit->action_label   = $actionLabel;
             $audit->record_title   = $recordTitle;
@@ -176,5 +183,36 @@ class AuditTrailController extends Controller
             'usersList'   => $usersList,
             'filters'     => $request->only(['search', 'table_name', 'action', 'user_id', 'start_date', 'end_date']),
         ]);
+    }
+
+    /**
+     * Rincian sebelum dan sesudah koreksi, satu baris jurnal per baris tabel.
+     */
+    private function correctionDiffs(array $oldData, array $newData): array
+    {
+        $format = function (?array $line): string {
+            if (! $line) {
+                return '-';
+            }
+
+            $isDebit = (float) $line['debit'] > 0;
+            $amount = number_format((float) ($isDebit ? $line['debit'] : $line['credit']), 2, ',', '.');
+
+            return "{$line['code']} {$line['name']} | " . ($isDebit ? 'Debit' : 'Kredit') . " Rp {$amount}";
+        };
+
+        $before = $oldData['lines'] ?? [];
+        $after = $newData['lines'] ?? [];
+        $diffs = [['field' => 'Alasan koreksi', 'old_value' => '-', 'new_value' => $newData['reason'] ?? '-']];
+
+        for ($index = 0; $index < max(count($before), count($after)); $index++) {
+            $diffs[] = [
+                'field' => 'Baris ' . ($index + 1),
+                'old_value' => $format($before[$index] ?? null),
+                'new_value' => $format($after[$index] ?? null),
+            ];
+        }
+
+        return $diffs;
     }
 }
