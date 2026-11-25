@@ -169,7 +169,7 @@ class ReportController extends Controller
             return Excel::download(new GeneralLedgerExport($ledgerData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.general-ledger-pdf', ['data' => $ledgerData])->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('reports.general-ledger-pdf', ['data' => $ledgerData, 'title' => 'LAPORAN BUKU BESAR'])->setPaper('a4', 'landscape');
         return $pdf->download($filename);
     }
 
@@ -191,7 +191,7 @@ class ReportController extends Controller
             return Excel::download(new TrialBalanceExport($reportData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.trial-balance-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('reports.trial-balance-pdf', ['data' => $reportData, 'title' => 'NERACA LAJUR'])->setPaper('a4', 'portrait');
         return $pdf->download($filename);
     }
 
@@ -213,7 +213,7 @@ class ReportController extends Controller
             return Excel::download(new IncomeStatementExport($reportData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.income-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('reports.income-statement-pdf', ['data' => $reportData, 'title' => 'LAPORAN LABA RUGI'])->setPaper('a4', 'portrait');
         return $pdf->download($filename);
     }
 
@@ -235,7 +235,7 @@ class ReportController extends Controller
             return Excel::download(new BalanceSheetExport($reportData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.balance-sheet-pdf', ['data' => $reportData])->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('reports.balance-sheet-pdf', ['data' => $reportData, 'title' => 'LAPORAN NERACA'])->setPaper('a4', 'landscape');
         return $pdf->download($filename);
     }
 
@@ -257,7 +257,7 @@ class ReportController extends Controller
             return Excel::download(new EquityStatementExport($reportData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.equity-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('reports.equity-statement-pdf', ['data' => $reportData, 'title' => 'LAPORAN PERUBAHAN EKUITAS'])->setPaper('a4', 'portrait');
         return $pdf->download($filename);
     }
 
@@ -279,7 +279,7 @@ class ReportController extends Controller
             return Excel::download(new CashFlowExport($reportData, $periodName), $filename);
         }
 
-        $pdf = Pdf::loadView('reports.cash-flow-statement-pdf', ['data' => $reportData])->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('reports.cash-flow-statement-pdf', ['data' => $reportData, 'title' => 'LAPORAN ARUS KAS'])->setPaper('a4', 'portrait');
         return $pdf->download($filename);
     }
 }

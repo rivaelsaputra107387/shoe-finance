@@ -157,7 +157,7 @@
     </div>
 
     <div class="footer">
-        Dicetak pada: {{ now()->format('d/m/Y H:i') }} | Halaman <span class="page-number"></span>
+        Dicetak pada: {{ now()->timezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB | Halaman <span class="page-number"></span>
     </div>
 </body>
 </html>

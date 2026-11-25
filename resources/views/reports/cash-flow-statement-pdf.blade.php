@@ -1,6 +1,10 @@
 @extends('reports.layout-pdf')
 
 @section('content')
+    @php
+        // Baris bernilai nol (mis. Ayat Silang yang saling menutup) tidak ditampilkan; urut per kode akun.
+        $rows = fn ($items) => collect($items)->filter(fn ($i) => round((float) $i['amount'], 2) != 0)->sortBy('account_code')->values();
+    @endphp
     @if(!$data['is_valid'])
         <div style="background-color: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 8px; margin-bottom: 12px; border-radius: 4px; text-align: center; font-weight: bold;">
             [!] Saldo kas akhir dari laporan ini tidak cocok dengan saldo aktual di buku besar.
@@ -12,7 +16,7 @@
         <div class="section-title" style="background-color: #eff6ff; color: #1e3a8a; border-color: #bfdbfe;">ARUS KAS DARI AKTIVITAS OPERASI</div>
         <table class="table">
             <tbody>
-                @forelse($data['operating'] as $item)
+                @forelse($rows($data['operating']) as $item)
                     <tr>
                         <td width="70%">{{ $item['account_name'] }}</td>
                         <td width="30%" class="text-right font-mono {{ $item['amount'] >= 0 ? '' : 'text-danger' }}">
@@ -33,7 +37,7 @@
         <div class="section-title" style="background-color: #fffbeb; color: #78350f; border-color: #fde68a;">ARUS KAS DARI AKTIVITAS INVESTASI</div>
         <table class="table">
             <tbody>
-                @forelse($data['investing'] as $item)
+                @forelse($rows($data['investing']) as $item)
                     <tr>
                         <td width="70%">{{ $item['account_name'] }}</td>
                         <td width="30%" class="text-right font-mono {{ $item['amount'] >= 0 ? '' : 'text-danger' }}">
@@ -54,7 +58,7 @@
         <div class="section-title" style="background-color: #faf5ff; color: #581c87; border-color: #e9d5ff;">ARUS KAS DARI AKTIVITAS PENDANAAN</div>
         <table class="table">
             <tbody>
-                @forelse($data['financing'] as $item)
+                @forelse($rows($data['financing']) as $item)
                     <tr>
                         <td width="70%">{{ $item['account_name'] }}</td>
                         <td width="30%" class="text-right font-mono {{ $item['amount'] >= 0 ? '' : 'text-danger' }}">
