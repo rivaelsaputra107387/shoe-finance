@@ -12,6 +12,7 @@ import {
     Calendar,
     Eye,
     ShieldCheck,
+    Printer,
 } from 'lucide-react';
 
 const formatRupiah = (amount) =>
@@ -116,9 +117,33 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                             Riwayat transaksi yang telah disetujui dan masuk ke Jurnal Final. Data tidak dapat dihapus.
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Data Terkunci — Hanya Baca</span>
+                    <div className="flex items-center gap-2.5">
+                        <a
+                            href={`/app/transaction-archive/export-pdf?${new URLSearchParams(
+                                Object.fromEntries(
+                                    Object.entries({
+                                        search: search || '',
+                                        bank_source: bankSource || '',
+                                        mutation_type: mutationType || '',
+                                        date_preset: datePreset || '',
+                                        start_date: startDate || '',
+                                        end_date: endDate || '',
+                                    }).filter(([_, v]) => v !== '')
+                                )
+                            ).toString()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
+                            title="Cetak Arsip Transaksi sesuai filter ke PDF"
+                        >
+                            <Printer className="w-4 h-4" />
+                            <span>Cetak PDF</span>
+                        </a>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Data Terkunci — Hanya Baca</span>
+                        </div>
                     </div>
                 </div>
 

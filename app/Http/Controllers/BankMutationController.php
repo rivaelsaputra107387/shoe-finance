@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\BankMutation;
 use App\Services\BankMutationParserService;
 use App\Services\BankMutationService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -54,6 +56,67 @@ class BankMutationController extends Controller
 
     public function archive(Request $request): Response
     {
+        $query = $this->buildArchiveQuery($request);
+        $mutations = $query->paginate(25)->withQueryString();
+
+        return Inertia::render('Transactions/TransactionArchive', [
+            'mutations' => $mutations,
+            'filters'   => $request->only(['bank_source', 'mutation_type', 'date_preset', 'start_date', 'end_date', 'search']),
+        ]);
+    }
+
+    public function exportArchivePdf(Request $request)
+    {
+        $query = $this->buildArchiveQuery($request);
+        $mutations = $query->get();
+
+        $totalIn = $mutations->where('mutation_type', 'IN')->sum('amount');
+        $totalOut = $mutations->where('mutation_type', 'OUT')->sum('amount');
+        $net = $totalIn - $totalOut;
+
+        $filterSummary = [];
+        if ($request->filled('search')) {
+            $filterSummary[] = 'Pencarian: "' . trim($request->search) . '"';
+        }
+        if ($request->filled('bank_source')) {
+            $filterSummary[] = 'Bank: ' . $request->bank_source;
+        }
+        if ($request->filled('mutation_type')) {
+            $filterSummary[] = 'Tipe: ' . ($request->mutation_type === 'IN' ? 'Masuk' : 'Keluar');
+        }
+
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+        if ($startDate && $endDate) {
+            $filterSummary[] = 'Periode: ' . Carbon::parse($startDate)->format('d/m/Y') . ' s/d ' . Carbon::parse($endDate)->format('d/m/Y');
+        } elseif ($startDate) {
+            $filterSummary[] = 'Mulai: ' . Carbon::parse($startDate)->format('d/m/Y');
+        } elseif ($endDate) {
+            $filterSummary[] = 'Sampai: ' . Carbon::parse($endDate)->format('d/m/Y');
+        } else {
+            $filterSummary[] = 'Periode: Semua Waktu';
+        }
+
+        $pdf = Pdf::loadView('reports.transaction-archive-pdf', [
+            'mutations' => $mutations,
+            'totalIn' => $totalIn,
+            'totalOut' => $totalOut,
+            'net' => $net,
+            'title' => 'ARSIP TRANSAKSI KEUANGAN',
+            'subtitle' => implode(' | ', $filterSummary),
+        ])->setPaper('a4', 'landscape');
+
+        $filename = 'Arsip_Transaksi_' . now()->format('Ymd_His') . '.pdf';
+
+        if ($request->input('action') === 'download') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    private function buildArchiveQuery(Request $request)
+    {
         $query = BankMutation::with(['uploader', 'journalEntry.lines.account', 'poster'])
             ->where('status', 'posted')
             ->orderBy('date', 'desc')
@@ -67,12 +130,33 @@ class BankMutationController extends Controller
             $query->where('mutation_type', $request->mutation_type);
         }
 
-        if ($request->filled('start_date')) {
-            $query->whereDate('date', '>=', $request->start_date);
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
+        if (! $startDate && ! $endDate && $request->filled('date_preset')) {
+            $preset = $request->date_preset;
+            $now = Carbon::now();
+            if ($preset === 'today') {
+                $startDate = $now->toDateString();
+                $endDate = $now->toDateString();
+            } elseif ($preset === 'last_7_days') {
+                $startDate = $now->copy()->subDays(7)->toDateString();
+                $endDate = $now->toDateString();
+            } elseif ($preset === 'this_month') {
+                $startDate = $now->copy()->startOfMonth()->toDateString();
+                $endDate = $now->toDateString();
+            } elseif ($preset === 'last_month') {
+                $startDate = $now->copy()->subMonth()->startOfMonth()->toDateString();
+                $endDate = $now->copy()->subMonth()->endOfMonth()->toDateString();
+            }
         }
 
-        if ($request->filled('end_date')) {
-            $query->whereDate('date', '<=', $request->end_date);
+        if ($startDate) {
+            $query->whereDate('date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('date', '<=', $endDate);
         }
 
         if ($request->filled('search')) {
@@ -90,12 +174,7 @@ class BankMutationController extends Controller
             });
         }
 
-        $mutations = $query->paginate(25)->withQueryString();
-
-        return Inertia::render('Transactions/TransactionArchive', [
-            'mutations' => $mutations,
-            'filters'   => $request->only(['bank_source', 'mutation_type', 'date_preset', 'start_date', 'end_date', 'search']),
-        ]);
+        return $query;
     }
 
     public function import(Request $request)

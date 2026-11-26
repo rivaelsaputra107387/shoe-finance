@@ -74,6 +74,7 @@ Route::middleware(['auth'])->prefix('app')->group(function () {
     Route::post('/bank-mutations/bulk-delete', [BankMutationController::class, 'bulkDelete'])->name('bank-mutations.bulk-delete');
 
     Route::get('/transaction-archive', [BankMutationController::class, 'archive'])->name('transaction-archive.index');
+    Route::get('/transaction-archive/export-pdf', [BankMutationController::class, 'exportArchivePdf'])->name('transaction-archive.export-pdf');
     
     // Integrasi Belanja Workshop
     Route::get('/purchase-requests', [\App\Http\Controllers\PurchaseRequestWebController::class, 'index'])->name('purchase-requests.index');

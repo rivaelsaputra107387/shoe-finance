@@ -112,4 +112,19 @@ class TransactionArchiveTest extends TestCase
 
         $this->assertSearchFinds('MUT-04000', []);
     }
+
+    public function test_export_archive_pdf_requires_authentication(): void
+    {
+        $this->get('/app/transaction-archive/export-pdf')
+            ->assertRedirect('/login');
+    }
+
+    public function test_export_archive_pdf_returns_pdf_successfully(): void
+    {
+        $response = $this->actingAs($this->finance)
+            ->get('/app/transaction-archive/export-pdf?search=6110');
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', $response->headers->get('Content-Type'));
+    }
 }
