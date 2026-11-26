@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\BankMutation;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
@@ -27,11 +28,11 @@ class TransactionArchiveTest extends TestCase
 
         $this->finance = User::factory()->create()->assignRole('finance');
 
-        $this->archived('MUT-03061', 'perjalanan dinas cikini');
-        $this->archived('MUT-02535', 'TRSF E-BANKING DB YAPINDO TRANSPORTA');
+        $this->archived('MUT-03061', 'perjalanan dinas cikini', 'posted', '6110');
+        $this->archived('MUT-02535', 'TRSF E-BANKING DB YAPINDO TRANSPORTA', 'posted', '1110');
     }
 
-    private function archived(string $reference, string $description, string $status = 'posted'): BankMutation
+    private function archived(string $reference, string $description, string $status = 'posted', ?string $accountCode = null): BankMutation
     {
         $journal = JournalEntry::create([
             'entry_date' => '2026-10-31',
@@ -41,6 +42,17 @@ class TransactionArchiveTest extends TestCase
             'created_by' => $this->finance->id,
             'status' => 'posted',
         ]);
+
+        if ($accountCode) {
+            $account = Account::where('code', $accountCode)->first();
+            if ($account) {
+                $journal->lines()->create([
+                    'account_id' => $account->id,
+                    'debit' => 1000,
+                    'credit' => 0,
+                ]);
+            }
+        }
 
         return BankMutation::create([
             'date' => '2026-10-31',
@@ -72,6 +84,16 @@ class TransactionArchiveTest extends TestCase
     public function test_finds_a_transaction_by_description(): void
     {
         $this->assertSearchFinds('yapindo', ['TRSF E-BANKING DB YAPINDO TRANSPORTA']);
+    }
+
+    public function test_finds_a_transaction_by_account_code(): void
+    {
+        $this->assertSearchFinds('6110', ['perjalanan dinas cikini']);
+    }
+
+    public function test_finds_a_transaction_by_account_name(): void
+    {
+        $this->assertSearchFinds('Gaji Karyawan', ['perjalanan dinas cikini']);
     }
 
     public function test_search_ignores_surrounding_spaces(): void

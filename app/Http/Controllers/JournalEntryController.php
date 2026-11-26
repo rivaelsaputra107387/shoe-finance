@@ -50,10 +50,14 @@ class JournalEntryController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('reference', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('lines.account', function ($acc) use ($search) {
+                      $acc->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -78,10 +82,14 @@ class JournalEntryController extends Controller
             ->orderBy('id', 'desc');
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('reference', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('lines.account', function ($acc) use ($search) {
+                      $acc->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  });
             });
         }
 

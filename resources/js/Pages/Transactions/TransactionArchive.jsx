@@ -143,7 +143,7 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                         {/* Search */}
                         <div className="relative lg:col-span-1">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                Cari Deskripsi / No. Jurnal
+                                Cari Deskripsi / No. Jurnal / Akun
                             </label>
                             <div className="relative">
                                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -151,7 +151,7 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Deskripsi atau MUT-03061..."
+                                    placeholder="Deskripsi, MUT-03061, kode akun..."
                                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-8 py-2 text-xs focus:ring-indigo-500 focus:border-indigo-500"
                                 />
                                 {search && (
@@ -291,9 +291,19 @@ export default function TransactionArchive({ mutations, filters = {} }) {
                                             </td>
                                             <td className="py-3 px-4 text-xs">
                                                 {item.journal_entry ? (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-mono">
-                                                        {item.journal_entry.reference}
-                                                    </span>
+                                                    <div className="flex flex-col gap-0.5 items-start">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-mono">
+                                                            {item.journal_entry.reference}
+                                                        </span>
+                                                        {item.journal_entry.lines && item.journal_entry.lines.length > 0 && (
+                                                            <span
+                                                                className="text-[10px] text-gray-500 dark:text-gray-400 font-mono truncate max-w-[160px]"
+                                                                title={item.journal_entry.lines.map((l) => `${l.account?.code ?? ''} ${l.account?.name ?? ''}`).filter(Boolean).join(', ')}
+                                                            >
+                                                                {Array.from(new Set(item.journal_entry.lines.map((l) => l.account?.code).filter(Boolean))).join(', ')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span className="text-gray-400 text-[11px]">—</span>
                                                 )}

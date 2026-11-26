@@ -353,7 +353,7 @@ export default function JournalList({ entries, filters }) {
                             <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Cari nomor referensi atau keterangan jurnal..."
+                                placeholder="Cari nomor referensi, keterangan, atau kode/nama akun..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && executeFilter()}

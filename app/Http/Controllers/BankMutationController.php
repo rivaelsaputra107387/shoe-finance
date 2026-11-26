@@ -54,7 +54,7 @@ class BankMutationController extends Controller
 
     public function archive(Request $request): Response
     {
-        $query = BankMutation::with(['uploader', 'journalEntry', 'poster'])
+        $query = BankMutation::with(['uploader', 'journalEntry.lines.account', 'poster'])
             ->where('status', 'posted')
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc');
@@ -79,7 +79,14 @@ class BankMutationController extends Controller
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
-                  ->orWhereHas('journalEntry', fn ($journal) => $journal->where('reference', 'like', "%{$search}%"));
+                  ->orWhereHas('journalEntry', function ($journal) use ($search) {
+                      $journal->where('reference', 'like', "%{$search}%")
+                          ->orWhere('description', 'like', "%{$search}%")
+                          ->orWhereHas('lines.account', function ($acc) use ($search) {
+                              $acc->where('code', 'like', "%{$search}%")
+                                  ->orWhere('name', 'like', "%{$search}%");
+                          });
+                  });
             });
         }
 
