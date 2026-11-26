@@ -10,13 +10,15 @@ use Illuminate\Support\Facades\DB;
 class LedgerService
 {
     /**
-     * Generate ledger (buku besar) data for a specific account in a fiscal period.
+     * Generate ledger (buku besar) data for a specific account in a fiscal period,
+     * with optional start and end date filters within that period.
      *
      * @return array ['account' => array, 'beginning_balance' => float, 'transactions' => array]
      */
-    public function generateForAccount(int $accountId, int $fiscalPeriodId): array
+    public function generateForAccount(int $accountId, int $fiscalPeriodId, ?string $startDate = null, ?string $endDate = null): array
     {
         $account = Account::findOrFail($accountId);
+        $period = \App\Models\FiscalPeriod::findOrFail($fiscalPeriodId);
 
         $balanceSvc = new AccountBalanceService();
         $totalsBefore = $balanceSvc->getCumulativeTotalsBefore($fiscalPeriodId);
@@ -41,14 +43,45 @@ class LedgerService
             $beginningBalance += $openingNet;
         }
 
-        $lines = JournalEntryLine::query()
+        // If startDate is specified and later than period start date, add transactions between period start and startDate to beginningBalance
+        $periodStartDate = \Carbon\Carbon::parse($period->start_date)->toDateString();
+        if ($startDate && $startDate > $periodStartDate) {
+            $priorLines = JournalEntryLine::query()
+                ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+                ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
+                ->where('journal_entries.is_opening', false)
+                ->where('journal_entries.status', 'posted')
+                ->whereNull('journal_entries.deleted_at')
+                ->where('journal_entry_lines.account_id', $accountId)
+                ->whereDate('journal_entries.entry_date', '<', $startDate)
+                ->selectRaw('COALESCE(SUM(journal_entry_lines.debit), 0) as total_debit, COALESCE(SUM(journal_entry_lines.credit), 0) as total_credit')
+                ->first();
+
+            if ($priorLines) {
+                $isDebit = $account->normal_balance === 'Debet';
+                $priorNet = $isDebit
+                    ? ((float) $priorLines->total_debit - (float) $priorLines->total_credit)
+                    : ((float) $priorLines->total_credit - (float) $priorLines->total_debit);
+                $beginningBalance += $priorNet;
+            }
+        }
+
+        $linesQuery = JournalEntryLine::query()
             ->where('journal_entry_lines.account_id', $accountId)
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
             ->where('journal_entries.status', 'posted')
             ->where('journal_entries.is_opening', false)
-            ->whereNull('journal_entries.deleted_at')
-            ->select([
+            ->whereNull('journal_entries.deleted_at');
+
+        if ($startDate) {
+            $linesQuery->whereDate('journal_entries.entry_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $linesQuery->whereDate('journal_entries.entry_date', '<=', $endDate);
+        }
+
+        $lines = $linesQuery->select([
                 'journal_entries.entry_date as date',
                 'journal_entries.reference',
                 'journal_entries.description as entry_description',
@@ -104,6 +137,8 @@ class LedgerService
             'ending_balance'    => round($runningBalance, 2),
             'rows'              => $transactions,
             'transactions'      => $transactions,
+            'start_date'        => $startDate,
+            'end_date'          => $endDate,
         ];
     }
 

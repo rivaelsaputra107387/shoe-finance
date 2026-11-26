@@ -10,6 +10,7 @@ use App\Services\EquityStatementService;
 use App\Services\IncomeStatementService;
 use App\Services\LedgerService;
 use App\Services\TrialBalanceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,19 +32,40 @@ class ReportController extends Controller
 
         $accountId      = $request->input('account_id', $accounts->first()?->id);
         $fiscalPeriodId = $request->input('fiscal_period_id', FiscalPeriod::active()?->id);
+        $day            = $request->input('day');
+        $startDate      = $request->input('start_date');
+        $endDate        = $request->input('end_date');
+
+        if ($fiscalPeriodId && $day) {
+            $period = $periods->firstWhere('id', (int) $fiscalPeriodId) ?? FiscalPeriod::find($fiscalPeriodId);
+            if ($period) {
+                $yearMonth = Carbon::parse($period->start_date)->format('Y-m');
+                $specificDate = sprintf('%s-%02d', $yearMonth, (int) $day);
+                $startDate = $specificDate;
+                $endDate = $specificDate;
+            }
+        }
 
         $ledgerData = null;
         if ($accountId && $fiscalPeriodId) {
             $service = new LedgerService();
-            $ledgerData = $service->generateForAccount($accountId, $fiscalPeriodId);
+            $ledgerData = $service->generateForAccount(
+                (int) $accountId,
+                (int) $fiscalPeriodId,
+                $startDate ?: null,
+                $endDate ?: null
+            );
         }
 
         return Inertia::render('Reports/GeneralLedger', [
-            'accounts'         => $accounts,
-            'periods'          => $periods,
-            'selectedAccountId'=> (int) $accountId,
-            'selectedPeriodId' => (int) $fiscalPeriodId,
-            'ledgerData'       => $ledgerData,
+            'accounts'          => $accounts,
+            'periods'           => $periods,
+            'selectedAccountId' => (int) $accountId,
+            'selectedPeriodId'  => (int) $fiscalPeriodId,
+            'selectedDay'       => $day ? (int) $day : null,
+            'selectedStartDate' => $startDate,
+            'selectedEndDate'   => $endDate,
+            'ledgerData'        => $ledgerData,
         ]);
     }
 
@@ -148,17 +170,47 @@ class ReportController extends Controller
 
     public function exportGeneralLedger(Request $request)
     {
-        $accountId = $request->input('account_id');
+        $accountId      = $request->input('account_id');
         $fiscalPeriodId = $request->input('fiscal_period_id');
-        $format = $request->input('format', 'pdf');
+        $day            = $request->input('day');
+        $startDate      = $request->input('start_date');
+        $endDate        = $request->input('end_date');
+        $format         = $request->input('format', 'pdf');
 
-        if (!$accountId || !$fiscalPeriodId) {
+        if (! $accountId || ! $fiscalPeriodId) {
             return back()->with('error', 'Parameter tidak lengkap untuk export.');
         }
 
+        $period = FiscalPeriod::find($fiscalPeriodId);
+        $periodName = $period?->name ?? 'Semua Periode';
+
+        if ($period && $day) {
+            $yearMonth = Carbon::parse($period->start_date)->format('Y-m');
+            $specificDate = sprintf('%s-%02d', $yearMonth, (int) $day);
+            $startDate = $specificDate;
+            $endDate = $specificDate;
+            $periodName .= " (Tanggal {$day})";
+        } elseif ($startDate && $endDate) {
+            $formattedStart = Carbon::parse($startDate)->format('d/m/Y');
+            $formattedEnd = Carbon::parse($endDate)->format('d/m/Y');
+            if ($startDate === $endDate) {
+                $periodName .= " (Tanggal {$formattedStart})";
+            } else {
+                $periodName .= " ({$formattedStart} - {$formattedEnd})";
+            }
+        } elseif ($startDate) {
+            $periodName .= " (Mulai " . Carbon::parse($startDate)->format('d/m/Y') . ")";
+        } elseif ($endDate) {
+            $periodName .= " (Sampai " . Carbon::parse($endDate)->format('d/m/Y') . ")";
+        }
+
         $service = new LedgerService();
-        $ledgerData = $service->generateForAccount($accountId, $fiscalPeriodId);
-        $periodName = FiscalPeriod::find($fiscalPeriodId)?->name ?? 'Semua Periode';
+        $ledgerData = $service->generateForAccount(
+            (int) $accountId,
+            (int) $fiscalPeriodId,
+            $startDate ?: null,
+            $endDate ?: null
+        );
         $ledgerData['period_name'] = $periodName;
 
         $account = Account::find($accountId);
